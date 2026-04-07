@@ -1,4 +1,5 @@
 # Server / deployment (do not push secrets or huge artifacts)
+.FullName
 archive.zip
 *.sql
 php_error.log
