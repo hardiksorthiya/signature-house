@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+                
+    <title>Proforma Invoice - {{ $proformaInvoice->proforma_invoice_number }}</title>
+    <style>
+.changshu-bor {
+    padding: 10px 20px;
+    border: 1px solid black;
+}
+        
+        body {
+           font-family: 'Montserrat', sans-serif;
+            font-size: 11px;
+            color: #000;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+        }
+        .company-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .company-address {
+            font-size: 11px;
+            margin-bottom: 10px;
+    font-weight: 700;
+        }
+        .separator-line {
+            border-top: 3px solid #000;
+            margin: 10px 0 15px 0;
+        }
+        .invoice-title {
+            text-align: center;
+            font-size: 40px;
+            font-weight: bold;
+            margin: 15px 0 20px 0;
+            text-transform: uppercase;
+        }
+       .invoice-meta {
+    width: 100%;
+    margin-bottom: 20px;
+}
+.invoice-meta-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.invoice-meta-table td {
+    width: 50%;
+    font-size: 14px;
+}
+.invoice-meta-left {
+    text-align: center;
+}
+.invoice-meta-right {
+    text-align: center;
+}
+        
+      
+       
+        .recipient-section {
+            margin-bottom: 20px;
+        }
+        .recipient-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    margin-right: 30px;
+}
+      .recipient-box {
+    border: 1px solid #000;
+    padding: 10px;
+    margin-top: 5px;
+}
+
+.recipient-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.recipient-label-cell {
+    width: 10%;
+    font-weight: bold;
+    vertical-align: top;
+}
+
+.recipient-content-cell {
+    width: 90%;
+    vertical-align: top;
+}
+
+.recipient-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.recipient-address {
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .items-table th,
+        .items-table td {
+            border: 1px solid #000;
+            padding: 20px 5px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .items-table th {
+           
+            font-weight: bold;
+            text-align: center;
+        }
+        .items-table .col-sno {
+            width: 8%;
+            text-align: center;
+        }
+        .items-table .col-description {
+            width: 60%;
+        }
+        .items-table .col-qty {
+            width: 12%;
+            text-align: center;
+        }
+        .items-table .col-amount {
+            width: 20%;
+            text-align: right;
+        }
+        .item-description {
+            line-height: 1.6;
+        }
+        .item-detail-line {
+            margin-bottom: 3px;
+        }
+        .item-category {
+            font-weight: bold;
+        }
+        .summary-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .summary-row td {
+            text-align: right;
+            padding-right: 15px;
+        }
+        .summary-label {
+            text-align: left !important;
+            padding-left: 15px;
+        }
+        .final-amount-row {
+            border-top: 2px solid #000;
+        }
+        .payment-terms {
+    margin-top: 25px;
+    font-size: 14px;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+}
+        .beneficiary-section {
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .beneficiary-label {
+            
+            text-transform: uppercase;
+        }
+        .beneficiary-info {
+            margin-bottom: 10px;
+        }
+        .signature-section {
+            margin-top: 10px;
+            display: table;
+            width: 100%;
+        }
+        .signature-left {
+            display: table-cell;
+            width: 50%;
+            vertical-align: bottom;
+        }
+        .signature-right {
+            display: table-cell;
+            width: 50%;
+            text-align: right;
+            vertical-align: bottom;
+        }
+        .signature-box {
+    display: inline-block;
+    padding: 10px 0;
+    text-align: center;
+}
+        .signature-name {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+.no-page-break {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+}
+html {
+    margin-bottom: 0;
+}
+    </style>
+</head>
+<body>
+    <!-- Company Header -->
+<div class="changshu-bor">
+    <div class="company-header">
+        <div class="company-name">{{ $proformaInvoice->seller->seller_name ?? 'COMPANY NAME' }}</div>
+        @if($proformaInvoice->seller->address)
+        <div class="company-address">{{ $proformaInvoice->seller->address }}</div>
+        @endif
+    </div>
+
+    <!-- Separator Line -->
+    <div class="separator-line"></div>
+
+    <!-- Invoice Title -->
+    <div class="invoice-title">PROFORMA INVOICE</div>
+
+    <!-- Invoice Number and Date -->
+    <div class="invoice-meta">
+    <table class="invoice-meta-table">
+        <tr>
+            <td class="invoice-meta-left">
+                INVOICE NO.: <strong>{{ $proformaInvoice->proforma_invoice_number }}</strong>
+            </td>
+            <td class="invoice-meta-right">
+                <strong>Date:</strong> {{ $proformaInvoice->created_at->format('d-m-Y') }}
+            </td>
+        </tr>
+    </table>
+</div>
+
+
+    <!-- Recipient Information -->
+    <div class="recipient-box">
+    <table class="recipient-table">
+        <tr>
+            <td class="recipient-label-cell">To</td>
+            <td class="recipient-content-cell">
+                <div class="recipient-name">
+                    <strong>{{ $proformaInvoice->buyer_company_name }}</strong>
+                </div>
+                <div class="recipient-address">
+                    @if($proformaInvoice->billing_address)
+                        {{ $proformaInvoice->billing_address }}
+                    @elseif($proformaInvoice->shipping_address)
+                        {{ $proformaInvoice->shipping_address }}
+                    @else
+                        {{ $proformaInvoice->contract->contact_address ?? 'Address not provided' }}
+                    @endif
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+
+    <!-- Items Table -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th class="col-sno">S. No.</th>
+                <th class="col-description">Item Description (TEXTILE MACHINE)</th>
+                <th class="col-qty">Qty</th>
+                <th class="col-amount">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php
+                $totalAmount = 0;
+                $totalAMC = 0;
+            @endphp
+            @foreach($proformaInvoice->proformaInvoiceMachines as $index => $piMachine)
+                @php
+                    $contractMachine = $piMachine->contractMachine;
+                    // AMC price is stored as TOTAL amount (not per unit), so use it directly
+                    $amcTotal = $piMachine->amc_price ?? 0;
+                    if($amcTotal > 0) {
+                        $totalAMC += $amcTotal;
+                    }
+                    
+                    // Use amount (unit price without AMC) for line total
+                    // If amount is not set, calculate from total_pi_price minus AMC
+                    if(isset($piMachine->amount) && $piMachine->amount > 0) {
+                        $unitPrice = $piMachine->amount;
+                        $lineTotal = $unitPrice * $piMachine->quantity;
+                    } elseif(isset($piMachine->total_pi_price) && $piMachine->total_pi_price > 0) {
+                        // Fallback: calculate from total_pi_price minus AMC
+                        $lineTotal = $piMachine->total_pi_price - $amcTotal;
+                    } else {
+                        // Last fallback: use pi_price_plus_amc minus AMC
+                        // Note: pi_price_plus_amc is per unit, so multiply by quantity first
+                        $unitPriceWithAmc = $piMachine->pi_price_plus_amc ?? 0;
+                        $totalWithAmc = $unitPriceWithAmc * $piMachine->quantity;
+                        $lineTotal = $totalWithAmc - $amcTotal;
+                    }
+                    // Ensure line total is not negative
+                    $lineTotal = max(0, $lineTotal);
+                    $totalAmount += $lineTotal;
+                    
+                    // Build detailed description in specific format
+                    $descriptionParts = [];
+                    if($contractMachine->machineCategory) {
+                        $descriptionParts[] = 'category: ' . $contractMachine->machineCategory->name;
+                    }
+                    if($contractMachine->machineModel) {
+                        $descriptionParts[] = 'Model: ' . $contractMachine->machineModel->model_no;
+                    }
+                    if($contractMachine->machineHook) {
+                        $hookValue = is_numeric($contractMachine->machineHook->name) ? $contractMachine->machineHook->name : ($contractMachine->machineHook->name ?? '');
+                        if($hookValue) {
+                            $descriptionParts[] = 'Hooks: ' . $hookValue;
+                        }
+                    }
+                    if($contractMachine->machineBeam) {
+                        $beamName = $contractMachine->machineBeam->name ?? '';
+                        $descriptionParts[] = 'Beam: ' . $beamName . ' : ' . $piMachine->quantity . ' pieces';
+                    }
+                    if($contractMachine->machineClothRoller) {
+                        $descriptionParts[] = 'Cloth Roller: ' . $piMachine->quantity . ' pieces';
+                    }
+                    if($contractMachine->machineChain) {
+                        $chainName = $contractMachine->machineChain->name ?? 'CAM';
+                        $descriptionParts[] = 'CAM-Chain: ' . $chainName;
+                    }
+                    if($contractMachine->machineHealdWire) {
+                        $healdValue = is_numeric($contractMachine->machineHealdWire->name) ? $contractMachine->machineHealdWire->name : ($contractMachine->machineHealdWire->name ?? '');
+                        if($healdValue) {
+                            $descriptionParts[] = 'Heald Wires: ' . $healdValue;
+                        }
+                    }
+                    if($contractMachine->machineERead) {
+                        $descriptionParts[] = 'E Read: ' . $piMachine->quantity . ' pieces';
+                    }
+                    
+                    $mainDescription = implode(', ', $descriptionParts);
+                @endphp
+                <tr>
+                    <td class="col-sno">{{ $index + 1 }}</td>
+                    <td class="col-description">
+                        <div class="item-description">
+                            <div class="item-detail-line">{{ $mainDescription }}</div>
+                            @if($contractMachine->wir)
+                            <div class="item-detail-line">WIR - {{ $contractMachine->wir->name }}</div>
+                            @endif
+                            @if($contractMachine->hsnCode)
+                            <div class="item-detail-line">HSN CODE - {{ $contractMachine->hsnCode->name }}</div>
+                            @endif
+                        </div>
+                    </td>
+                    <td class="col-qty">{{ $piMachine->quantity }}</td>
+                    <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($lineTotal, 2) }}</td>
+                </tr>
+            @endforeach
+            
+            <!-- Summary Rows -->
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">Total PI Price</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($totalAmount, 2) }}</td>
+            </tr>
+            @if($totalAMC > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">AMC</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($totalAMC, 2) }}</td>
+            </tr>
+            @endif
+            @if(($proformaInvoice->overseas_freight ?? 0) > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">Overseas Freight Approx</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->overseas_freight, 2) }}</td>
+            </tr>
+            @endif
+            @if(($proformaInvoice->port_expenses_clearing ?? 0) > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">Port Exp + Clearing Exp Approx</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->port_expenses_clearing, 2) }}</td>
+            </tr>
+            @endif
+            @if(($proformaInvoice->gst_amount ?? 0) > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">GST Amount</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->gst_amount, 2) }}</td>
+            </tr>
+            @endif
+            <tr class="summary-row final-amount-row">
+                <td colspan="3" class="summary-label">Final Amount</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->total_amount, 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Payment Terms -->
+   
+    <div class="payment-terms">
+        PAYMENT TERMS: 10% TOKEN + 15% ADVANCE + 75% BEFORE SHIPMENT
+    </div>
+
+    <!-- Beneficiary Bank Details -->
+    @if($proformaInvoice->seller->bankDetails->count() > 0)
+        @php
+            $firstBank = $proformaInvoice->seller->bankDetails->first();
+        @endphp
+        <div class="beneficiary-section">
+            <div class="beneficiary-info">
+                <span class="beneficiary-label">BENEFICIARY'S BANK:</span> {{ $firstBank->bank_name }}
+                @if($firstBank->bank_address)
+                    (FIELD 57A IN FIN103)
+                @endif
+            </div>
+            @if($firstBank->bank_address)
+            <div class="beneficiary-info">
+                {{ $firstBank->bank_address }}
+            </div>
+            @endif
+            @if($firstBank->ifsc_code)
+            <div class="beneficiary-info">
+                <span class="beneficiary-label">SWIFT CODE:</span> {{ $firstBank->ifsc_code }}
+            </div>
+            @endif
+            <div class="beneficiary-info" style="margin-top: 15px;">
+                <span class="beneficiary-label">BENEFICIARY'S NAME:</span> {{ $proformaInvoice->seller->seller_name }}
+            </div>
+            <div class="beneficiary-info">
+                <span class="beneficiary-label">ACCOUNT NO.:</span> {{ $firstBank->account_number }}
+            </div>
+            <div class="beneficiary-info">
+                <span class="beneficiary-label">ADDRESS:</span> {{ $proformaInvoice->seller->address }}
+            </div>
+        </div>
+    @endif
+</div>
+
+    <!-- Signature Section -->
+    <div class="signature-section no-page-break">
+        <div class="signature-left">
+            <!-- Space for company seal/logo -->
+            @if($proformaInvoice->seller->logo)
+            <div class="signature-box">
+                <img src="{{ asset('storage/' . $proformaInvoice->seller->logo) }}" alt="Company Seal" style="max-width: 100%; max-height: 130px;">
+<div class="signature-name">Frank Ping</div>
+            </div>
+            @elseif($proformaInvoice->seller->signature)
+            <div class="signature-box">
+                <img src="{{ asset('storage/' . $proformaInvoice->seller->signature) }}" alt="Signature" style="max-width: 100%; max-height: 130px;">
+<div class="signature-name">Frank Ping</div>
+            </div>
+            @else
+            <div class="signature-box">
+                <!-- Empty box for seal -->
+            </div>
+            @endif
+        </div>
+        <div class="signature-right">
+            
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,330 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Contract;
+use App\Models\ProformaInvoice;
+use App\Models\SerialNumber;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+
+class SerialNumberController extends Controller
+{
+    /**
+     * Display serial numbers index page (list all PIs)
+     */
+    public function index(Request $request)
+    {
+        $query = ProformaInvoice::with(['serialNumbers.machineCategory', 'contract.creator', 'creator', 'seller'])
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('pi_number')) {
+            $query->where('proforma_invoice_number', trim($request->pi_number));
+        } elseif ($request->filled('contract_number')) {
+            $cn = trim($request->contract_number);
+            $query->whereHas('contract', function ($sub) use ($cn) {
+                $sub->where('contract_number', $cn);
+            });
+        } elseif ($request->filled('search')) {
+            $term = trim($request->search);
+            if ($term !== '') {
+                $like = '%' . $term . '%';
+                $query->where(function ($q) use ($like) {
+                    $q->where('proforma_invoice_number', 'like', $like)
+                        ->orWhere('buyer_company_name', 'like', $like)
+                        ->orWhereHas('creator', function ($u) use ($like) {
+                            $u->where('name', 'like', $like);
+                        })
+                        ->orWhereHas('contract', function ($sub) use ($like) {
+                            $sub->where('contract_number', 'like', $like)
+                                ->orWhere('buyer_name', 'like', $like)
+                                ->orWhere('company_name', 'like', $like)
+                                ->orWhereHas('creator', function ($u) use ($like) {
+                                    $u->where('name', 'like', $like);
+                                });
+                        });
+                });
+            }
+        }
+
+        $proformaInvoices = $query->paginate(15)->withQueryString();
+
+        return view('serial-numbers.index', compact('proformaInvoices'));
+    }
+
+    /**
+     * PI + contract rows for the searchable dropdown (same as Pre Erection / Damage details).
+     */
+    public function unifiedSearchItems(Request $request)
+    {
+        $q = trim((string) $request->get('q', ''));
+        $like = $q !== '' ? '%' . $q . '%' : null;
+
+        $piQuery = ProformaInvoice::query()
+            ->with(['contract.creator', 'creator'])
+            ->orderByDesc('created_at');
+
+        if ($like !== null) {
+            $piQuery->where(function ($w) use ($like) {
+                $w->where('proforma_invoice_number', 'like', $like)
+                    ->orWhere('buyer_company_name', 'like', $like)
+                    ->orWhereHas('creator', function ($u) use ($like) {
+                        $u->where('name', 'like', $like);
+                    })
+                    ->orWhereHas('contract', function ($c) use ($like) {
+                        $c->where('contract_number', 'like', $like)
+                            ->orWhere('buyer_name', 'like', $like)
+                            ->orWhere('company_name', 'like', $like)
+                            ->orWhereHas('creator', function ($u) use ($like) {
+                                $u->where('name', 'like', $like);
+                            });
+                    });
+            });
+        }
+
+        $pis = $piQuery->limit(80)->get()->map(function (ProformaInvoice $pi) {
+            $contract = $pi->contract;
+            $sm = $contract?->creator?->name ?? $pi->creator?->name;
+
+            return [
+                'kind' => 'pi',
+                'id' => $pi->id,
+                'proforma_invoice_number' => $pi->proforma_invoice_number,
+                'buyer_company_name' => $pi->buyer_company_name,
+                'contract_number' => $contract?->contract_number,
+                'buyer_name' => $contract?->buyer_name,
+                'company_name' => $contract?->company_name,
+                'sales_manager_name' => $sm,
+            ];
+        });
+
+        $contractQuery = Contract::query()
+            ->with('creator')
+            ->orderByDesc('updated_at');
+
+        if ($like !== null) {
+            $contractQuery->where(function ($w) use ($like) {
+                $w->where('contract_number', 'like', $like)
+                    ->orWhere('buyer_name', 'like', $like)
+                    ->orWhere('company_name', 'like', $like)
+                    ->orWhereHas('creator', function ($u) use ($like) {
+                        $u->where('name', 'like', $like);
+                    });
+            });
+        }
+
+        $contracts = $contractQuery->limit(50)->get()->map(function (Contract $c) {
+            return [
+                'kind' => 'contract',
+                'id' => $c->id,
+                'contract_number' => $c->contract_number,
+                'buyer_name' => $c->buyer_name,
+                'company_name' => $c->company_name,
+                'sales_manager_name' => $c->creator?->name,
+            ];
+        });
+
+        return response()->json([
+            'proforma_invoices' => $pis,
+            'contracts' => $contracts,
+        ]);
+    }
+
+    /**
+     * Show the form for adding serial numbers for a proforma invoice
+     */
+    public function show(ProformaInvoice $proformaInvoice)
+    {
+        $proformaInvoice->load([
+            'proformaInvoiceMachines.machineCategory',
+            'proformaInvoiceMachines.brand',
+            'proformaInvoiceMachines.machineModel',
+            'proformaInvoiceMachines.serialNumbers',
+            'serialNumbers.machineCategory'
+        ]);
+        
+        // Group machines by category with their quantities
+        $machinesByCategory = $proformaInvoice->proformaInvoiceMachines
+            ->groupBy('machine_category_id')
+            ->map(function($machines) {
+                $category = $machines->first()->machineCategory;
+                $totalQuantity = $machines->sum('quantity');
+                
+                // Get existing serial numbers for these machines
+                $machineIds = $machines->pluck('id');
+                $existingSerialNumbers = SerialNumber::whereIn('proforma_invoice_machine_id', $machineIds)
+                    ->get()
+                    ->groupBy('proforma_invoice_machine_id');
+                
+                return [
+                    'category' => $category,
+                    'machines' => $machines->map(function($machine) use ($existingSerialNumbers) {
+                        $serialNumbers = $existingSerialNumbers->get($machine->id, collect())->values();
+                        // Create array indexed by position for easy access in view
+                        $serialNumbersArray = [];
+                        foreach ($serialNumbers as $index => $serial) {
+                            $serialNumbersArray[$index] = $serial;
+                        }
+                        return [
+                            'machine' => $machine,
+                            'serial_numbers' => $serialNumbersArray,
+                        ];
+                    }),
+                    'total_quantity' => $totalQuantity,
+                ];
+            });
+
+        return view('serial-numbers.show', compact('proformaInvoice', 'machinesByCategory'));
+    }
+
+    /**
+     * Store serial numbers for a proforma invoice
+     */
+    public function store(Request $request, ProformaInvoice $proformaInvoice)
+    {
+        $validator = Validator::make($request->all(), [
+            'serial_numbers' => 'required|array',
+            'serial_numbers.*.*.machine_id' => 'required|exists:proforma_invoice_machines,id',
+            'serial_numbers.*.*.serial_number' => 'nullable|string|max:255',
+            'serial_numbers.*.*.khata_number' => 'nullable|string|max:255',
+        ]);
+
+        // When Khata number is provided, Serial number is compulsory
+        $validator->after(function ($validator) use ($request) {
+            foreach ($request->serial_numbers ?? [] as $machineId => $instances) {
+                if (empty($machineId) || !is_array($instances)) {
+                    continue;
+                }
+                foreach ($instances as $index => $instance) {
+                    $khata = trim((string) ($instance['khata_number'] ?? ''));
+                    $serial = trim((string) ($instance['serial_number'] ?? ''));
+                    if ($khata !== '' && $serial === '') {
+                        $validator->errors()->add(
+                            "serial_numbers.{$machineId}.{$index}.serial_number",
+                            'Serial number is required when Khata number is provided.'
+                        );
+                    }
+                }
+            }
+        });
+
+        $validator->validate();
+
+        try {
+            DB::beginTransaction();
+
+            // Delete existing serial numbers for this PI
+            SerialNumber::where('proforma_invoice_id', $proformaInvoice->id)->delete();
+
+            foreach ($request->serial_numbers as $machineId => $instances) {
+                if (empty($machineId)) {
+                    continue;
+                }
+
+                $machine = $proformaInvoice->proformaInvoiceMachines()
+                    ->where('id', $machineId)
+                    ->first();
+
+                if (!$machine) {
+                    continue;
+                }
+
+                // Create serial number entry for each instance
+                foreach ($instances as $instanceData) {
+                    if (!empty($instanceData['serial_number']) || !empty($instanceData['khata_number'])) {
+                        SerialNumber::create([
+                            'proforma_invoice_id' => $proformaInvoice->id,
+                            'proforma_invoice_machine_id' => $machineId,
+                            'machine_category_id' => $machine->machine_category_id,
+                            'serial_number' => $instanceData['serial_number'] ?? null,
+                            'khata_number' => $instanceData['khata_number'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('serial-numbers.show', $proformaInvoice)
+                ->with('success', 'Serial numbers saved successfully.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error saving serial numbers: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            return back()->withErrors(['error' => 'Failed to save serial numbers: ' . $e->getMessage()])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Get PIs by Sales Manager (AJAX)
+     */
+    public function getPINumbersBySalesManager(Request $request)
+    {
+        $salesManagerId = $request->get('sales_manager_id');
+        
+        $pis = ProformaInvoice::where(function($q) use ($salesManagerId) {
+            $q->where('created_by', $salesManagerId)
+              ->orWhereHas('contract', function($subQ) use ($salesManagerId) {
+                  $subQ->where('created_by', $salesManagerId);
+              });
+        })
+        ->orderBy('proforma_invoice_number')
+        ->get(['id', 'proforma_invoice_number', 'buyer_company_name']);
+
+        return response()->json($pis);
+    }
+
+    /**
+     * Get Customers by Sales Manager (AJAX)
+     */
+    public function getCustomersBySalesManager(Request $request)
+    {
+        $salesManagerId = $request->get('sales_manager_id');
+        
+        $customers = ProformaInvoice::where(function($q) use ($salesManagerId) {
+            $q->where('created_by', $salesManagerId)
+              ->orWhereHas('contract', function($subQ) use ($salesManagerId) {
+                  $subQ->where('created_by', $salesManagerId);
+              });
+        })
+        ->select('buyer_company_name')
+        ->distinct()
+        ->whereNotNull('buyer_company_name')
+        ->orderBy('buyer_company_name')
+        ->get()
+        ->pluck('buyer_company_name')
+        ->unique()
+        ->values();
+
+        return response()->json($customers);
+    }
+
+    /**
+     * Get Contracts by Sales Manager (AJAX) for search dropdown
+     */
+    public function getContractsBySalesManager(Request $request)
+    {
+        if (!$request->filled('sales_manager_id')) {
+            return response()->json([]);
+        }
+        $contracts = Contract::with(['creator'])
+            ->where('created_by', $request->sales_manager_id)
+            ->orderBy('contract_number')
+            ->get()
+            ->map(function ($contract) {
+                return [
+                    'id' => $contract->id,
+                    'contract_number' => $contract->contract_number,
+                    'buyer_name' => $contract->buyer_name,
+                    'company_name' => $contract->company_name,
+                ];
+            });
+        return response()->json($contracts);
+    }
+}

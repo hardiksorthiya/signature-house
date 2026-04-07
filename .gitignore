@@ -1,0 +1,5 @@
+# Server / deployment (do not push secrets or huge artifacts)
+archive.zip
+*.sql
+php_error.log
+.user.ini

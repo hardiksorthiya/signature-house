@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8">
+    <title>Proforma Invoice - {{ $proformaInvoice->proforma_invoice_number }}</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12px;
+            color: #000;
+            margin: 20px;
+            padding: 0;
+            line-height: 1.6;
+        }
+        
+        .header-container {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .logo-section {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        
+        .logo-img {
+            max-height: 120px;
+        }
+        
+        .logo-text {
+            font-family: 'Times New Roman', serif;
+            font-size: 36px;
+            font-weight: bold;
+            color: #D4AF37;
+            margin: 0;
+            padding: 0;
+            letter-spacing: 2px;
+        }
+        
+        .logo-subtitle {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+        
+        .header-info-section {
+            display: table;
+            width: 100%;
+            margin-top: 15px;
+        }
+        
+        .header-info-left {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            text-align: left;
+        }
+        
+        .header-info-right {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            text-align: right;
+        }
+        
+        .header-meta {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            color: #000;
+            margin-bottom: 5px;
+        }
+        
+        .recipient-section {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        .recipient-to {
+    font-size: 14px;
+    font-weight: bold;
+}
+        
+        .recipient-name {
+    font-size: 14px;
+    font-weight: bold;
+}
+        
+        .recipient-address {
+            font-size: 14px;
+ font-weight: bold;
+     
+        }
+        
+        .greeting {
+            font-size: 13px;
+                margin: 10px 0 0;
+        }
+        
+        .subject {
+    font-size: 19px;
+    font-weight: bold;
+    text-align: center;
+}
+        
+      .products-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, Helvetica, sans-serif;
+    border: 1px solid black;
+    margin: 5px 0;
+}
+        
+        .products-table td
+ {
+    padding: 8px 5px;
+    vertical-align: top;
+    font-size: 12px;
+    border: 1px solid black;
+}
+        
+        .product-description {
+            width: 75%;
+            text-align: left;
+            line-height: 1.6;
+        }
+        
+        .product-price {
+            width: 25%;
+            text-align: right;
+            font-weight: bold;
+        }
+        
+        .summary-row {
+            font-weight: bold;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            margin-top: 5px;
+        }
+        
+        .summary-row td {
+            padding: 5px;
+        }
+        
+        .final-amount-row {
+            border-top: 2px solid #000;
+            font-size: 14px;
+        }
+        
+        .amount-in-words {
+            margin: 15px 0 0;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .terms-section {
+            margin: 10px 0 0;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+        }
+        
+        .terms-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .terms-content {
+            line-height: 1.8;
+            margin-left: 0;
+        }
+        
+        .bank-section {
+            margin: 25px 0;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+        }
+        
+        .bank-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .bank-detail {
+            line-height: 1.8;
+            margin-left: 0;
+        }
+        
+        .for-section {
+            margin: 25px 0 15px 0;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+        }
+        
+        .for-label {
+            font-weight: normal;
+            margin-bottom: 5px;
+        }
+        
+        .for-company-name {
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .signature-section {
+            margin: 10px 0 20px 0;
+            display: flex;
+            align-items: flex-end;
+            gap: 30px;
+        }
+        
+        .signature-left {
+            flex: 0 0 auto;
+        }
+        
+        .signature-right {
+            flex: 0 0 auto;
+        }
+        
+        .signature-img {
+            max-height: 80px;
+            display: block;
+        }
+        
+        .stamp-img {
+            max-height: 80px;
+            max-width: 80px;
+            display: block;
+        }
+        
+        .footer-section {
+            margin-top: 20px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        
+        .footer-company {
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        
+        .footer-details {
+            font-size: 12px;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-container">
+        <!-- Logo Section (Centered at Top) -->
+        <div class="logo-section">
+            @if(isset($proformaInvoice->seller) && isset($proformaInvoice->seller->logo) && $proformaInvoice->seller->logo)
+                <img src="{{ asset('storage/' . $proformaInvoice->seller->logo) }}" alt="Company Logo" class="logo-img">
+            @else
+                <div class="logo-text">SIGNATURE®</div>
+                <div class="logo-subtitle">-TEXTILE MACHINES-</div>
+            @endif
+        </div>
+        
+        <!-- TO Section (Left) and Date/Invoice Section (Right) Below Logo -->
+        <div class="header-info-section">
+            <div class="header-info-left">
+                <div class="recipient-section">
+                    <div class="recipient-to">To,</div>
+                    <div class="recipient-name">{{ isset($proformaInvoice->buyer_company_name) ? $proformaInvoice->buyer_company_name : 'Company Name' }}</div>
+                    <div class="recipient-address">
+                        @if(isset($proformaInvoice->billing_address) && $proformaInvoice->billing_address)
+                            {{ $proformaInvoice->billing_address }}
+                        @elseif(isset($proformaInvoice->shipping_address) && $proformaInvoice->shipping_address)
+                            {{ $proformaInvoice->shipping_address }}
+                        @elseif(isset($proformaInvoice->contract) && isset($proformaInvoice->contract->contact_address))
+                            {{ $proformaInvoice->contract->contact_address }}
+                        @else
+                            Address not provided
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <div class="header-info-right">
+                <div class="header-meta">DATE: {{ isset($proformaInvoice->created_at) ? $proformaInvoice->created_at->format('d-m-Y') : date('d-m-Y') }}</div>
+                <div class="header-meta">Performa No. {{ isset($proformaInvoice->proforma_invoice_number) ? $proformaInvoice->proforma_invoice_number : 'N/A' }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Greeting and Subject Section -->
+    <div class="recipient-section">
+        <div class="greeting">Dear Sir,</div>
+        <div class="subject">Performa Invoice</div>
+    </div>
+    
+    <!-- Products Table -->
+    <table class="products-table">
+        <tbody>
+            @php
+                $totalAmount = 0;
+                $totalAMC = 0;
+                // Determine currency based on type_of_sale
+                $typeOfSale = isset($proformaInvoice->type_of_sale) ? $proformaInvoice->type_of_sale : 'import';
+                if ($typeOfSale === 'local') {
+                    $currency = 'INR  ';
+                    $currencySymbol = 'INR  ';
+                } else {
+                    // import or high_seas -> USD
+                    $currency = 'USD';
+                    $currencySymbol = '$';
+                }
+                $usdRate = isset($proformaInvoice->usd_rate) ? $proformaInvoice->usd_rate : 1;
+            @endphp
+            @foreach($proformaInvoice->proformaInvoiceMachines ?? [] as $index => $machine)
+            @php
+                $machineAmount = (isset($machine->amount) ? $machine->amount : 0) * (isset($machine->quantity) ? $machine->quantity : 0);
+                $totalAmount += $machineAmount;
+                $amcPrice = isset($machine->amc_price) ? $machine->amc_price : 0;
+                if($amcPrice > 0) {
+                    $totalAMC += $amcPrice;
+                }
+                
+                // Build product description
+                $descriptionParts = [];
+                
+                if(isset($machine->contractMachine)) {
+                    // Brand
+                    if(isset($machine->contractMachine->brand) && $machine->contractMachine->brand && isset($machine->contractMachine->brand->name)) {
+                        $descriptionParts[] = 'Brand: ' . $machine->contractMachine->brand->name;
+                    }
+                    // Category
+                    if(isset($machine->contractMachine->machineCategory) && $machine->contractMachine->machineCategory && isset($machine->contractMachine->machineCategory->name)) {
+                        $descriptionParts[] = 'category: ' . $machine->contractMachine->machineCategory->name;
+                    }
+                    // Model
+                    if(isset($machine->contractMachine->machineModel) && $machine->contractMachine->machineModel && isset($machine->contractMachine->machineModel->model_no)) {
+                        $descriptionParts[] = 'Model: ' . $machine->contractMachine->machineModel->model_no;
+                    }
+                    // Size (if available via machine size)
+                    // Feeder
+                    if(isset($machine->contractMachine->feeder) && $machine->contractMachine->feeder) {
+                        $feederText = '';
+                        if(isset($machine->contractMachine->feeder->feederBrand) && $machine->contractMachine->feeder->feederBrand && isset($machine->contractMachine->feeder->feederBrand->name)) {
+                            $feederText = $machine->contractMachine->feeder->feederBrand->name . ' - ';
+                        }
+                        if(isset($machine->contractMachine->feeder->feeder)) {
+                            $feederText .= $machine->contractMachine->feeder->feeder;
+                            $descriptionParts[] = 'Feeder: ' . $feederText;
+                        }
+                    }
+                    // Software
+                    if(isset($machine->contractMachine->machineSoftware) && $machine->contractMachine->machineSoftware && isset($machine->contractMachine->machineSoftware->name)) {
+                        $descriptionParts[] = 'Software: ' . $machine->contractMachine->machineSoftware->name;
+                    }
+                    // Nozzle
+                    if(isset($machine->contractMachine->machineNozzle) && $machine->contractMachine->machineNozzle && isset($machine->contractMachine->machineNozzle->nozzle)) {
+                        $descriptionParts[] = 'Nozzle: ' . $machine->contractMachine->machineNozzle->nozzle;
+                    }
+                    // Beam
+                    if(isset($machine->contractMachine->machineBeam) && $machine->contractMachine->machineBeam && isset($machine->contractMachine->machineBeam->name)) {
+                        $descriptionParts[] = 'Beam: ' . $machine->contractMachine->machineBeam->name;
+                    }
+                    // Cloth Roller
+                    if(isset($machine->contractMachine->machineClothRoller) && $machine->contractMachine->machineClothRoller && isset($machine->contractMachine->machineClothRoller->name)) {
+                        $descriptionParts[] = 'Cloth Roller: ' . $machine->contractMachine->machineClothRoller->name;
+                    }
+                    // Heald Wires
+                    if(isset($machine->contractMachine->machineHealdWire) && $machine->contractMachine->machineHealdWire && isset($machine->contractMachine->machineHealdWire->name)) {
+                        $descriptionParts[] = 'Heald Wires: ' . $machine->contractMachine->machineHealdWire->name;
+                    }
+                    // E Read
+                    if(isset($machine->contractMachine->machineERead) && $machine->contractMachine->machineERead && isset($machine->contractMachine->machineERead->name)) {
+                        $descriptionParts[] = 'E Read: ' . $machine->contractMachine->machineERead->name;
+                    }
+                }
+                
+                $description = implode(', ', $descriptionParts);
+                $quantity = isset($machine->quantity) ? $machine->quantity : 0;
+                $unitPrice = isset($machine->amount) ? $machine->amount : 0;
+                $lineTotal = $machineAmount;
+            @endphp
+            <tr>
+                <td class="product-description">
+                    {{ $description }}
+                    @if($quantity > 0 && $unitPrice > 0)
+                        Qty & Price :- {{ $quantity }} * {{ number_format($unitPrice, 2) }}
+                    @endif
+                </td>
+                <td class="product-price">{{ number_format($lineTotal, 2) }}</td>
+            </tr>
+            @endforeach
+            
+            <!-- Summary Rows -->
+            <tr class="summary-row">
+                <td class="product-description">Total PI Price</td>
+                <td class="product-price">{{ $currencySymbol }} {{ number_format($totalAmount, 2) }}</td>
+            </tr>
+            
+            @if($totalAMC > 0)
+            <tr class="summary-row">
+                <td class="product-description">AMC</td>
+                <td class="product-price">{{ $currencySymbol }} {{ number_format($totalAMC, 2) }}</td>
+            </tr>
+            @endif
+            
+            @if(($proformaInvoice->overseas_freight ?? 0) > 0)
+            <tr class="summary-row">
+                <td class="product-description">Overseas Freight Approx</td>
+                <td class="product-price">{{ $currencySymbol }} {{ number_format($proformaInvoice->overseas_freight, 2) }}</td>
+            </tr>
+            @endif
+            
+            @if(($proformaInvoice->port_expenses_clearing ?? 0) > 0)
+            <tr class="summary-row">
+                <td class="product-description">Port Exp + Clearing Exp Approx</td>
+                <td class="product-price">{{ $currencySymbol }} {{ number_format($proformaInvoice->port_expenses_clearing, 2) }}</td>
+            </tr>
+            @endif
+            
+            @php
+                $gstPercentage = isset($proformaInvoice->gst_percentage) ? $proformaInvoice->gst_percentage : 0;
+                $finalTotalWithGST = isset($proformaInvoice->total_amount) ? $proformaInvoice->total_amount : $totalAmount;
+                $gstAmount = isset($proformaInvoice->gst_amount) ? $proformaInvoice->gst_amount : 0;
+                
+                // Calculate base amount (without GST)
+                $baseAmount = $gstPercentage > 0 ? ($finalTotalWithGST / (1 + ($gstPercentage / 100))) : $finalTotalWithGST;
+                
+                // If gst_amount is explicitly set, use it
+                if($gstAmount > 0 && $gstPercentage > 0) {
+                    $baseAmount = $finalTotalWithGST - $gstAmount;
+                } else {
+                    $gstAmount = $finalTotalWithGST - $baseAmount;
+                }
+                
+                // Calculate Final Total Price (USD rate * total price) - only for high_seas
+                if ($typeOfSale === 'high_seas') {
+                    if ($usdRate > 0) {
+                        $finalTotalPrice = $usdRate * $totalAmount;
+                    } else {
+                        // If usd_rate is not set, default to 1 or use a calculated rate
+                        $finalTotalPrice = $totalAmount;
+                        $usdRate = 1;
+                    }
+                } else {
+                    $finalTotalPrice = $totalAmount;
+                }
+            @endphp
+            
+            @if($typeOfSale === 'high_seas')
+            <tr class="summary-row">
+                <td class="product-description">Final Total Price ({{ number_format($usdRate, 2) }} * {{ number_format($totalAmount, 2) }})</td>
+                <td class="product-price">INR {{ number_format($finalTotalPrice, 2) }}</td>
+            </tr>
+            @endif
+            
+            @if($gstPercentage > 0)
+            <tr class="summary-row">
+                <td class="product-description">GST</td>
+                <td class="product-price">{{ number_format($gstPercentage, 2) }}%</td>
+            </tr>
+            @endif
+            
+            @if($gstAmount > 0)
+            <tr class="summary-row">
+                <td class="product-description">GST Amount</td>
+                <td class="product-price">{{ $currencySymbol }} {{ number_format($gstAmount, 2) }}</td>
+            </tr>
+            @endif
+            
+            <tr class="summary-row final-amount-row">
+                <td class="product-description">Final Amount + GST Amount</td>
+                <td class="product-price">{{ $currencySymbol }} {{ number_format($finalTotalWithGST, 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <!-- Amount in Words -->
+    <div class="amount-in-words">
+        Final Amount {{ number_format($finalTotalWithGST, 1) }} {{ $currency }}
+        <br>
+        @php
+            $number = (float)$finalTotalWithGST;
+            $ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 
+                     'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
+            $tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
+            
+            function convertToWords($num, $ones, $tens) {
+                if ($num == 0) return 'ZERO';
+                if ($num < 20) return $ones[(int)$num];
+                if ($num < 100) {
+                    $tens_digit = floor($num / 10);
+                    $ones_digit = $num % 10;
+                    return $tens[$tens_digit] . ($ones_digit > 0 ? ' ' . $ones[$ones_digit] : '');
+                }
+                if ($num < 1000) {
+                    $hundreds = floor($num / 100);
+                    $remainder = $num % 100;
+                    return $ones[$hundreds] . ' HUNDRED' . ($remainder > 0 ? ' ' . convertToWords($remainder, $ones, $tens) : '');
+                }
+                if ($num < 100000) {
+                    $thousands = floor($num / 1000);
+                    $remainder = $num % 1000;
+                    return convertToWords($thousands, $ones, $tens) . ' THOUSAND' . ($remainder > 0 ? ' ' . convertToWords($remainder, $ones, $tens) : '');
+                }
+                if ($num < 10000000) {
+                    $lakhs = floor($num / 100000);
+                    $remainder = $num % 100000;
+                    return convertToWords($lakhs, $ones, $tens) . ' LAKH' . ($lakhs > 1 ? 'S' : '') . ($remainder > 0 ? ' ' . convertToWords($remainder, $ones, $tens) : '');
+                }
+                $crores = floor($num / 10000000);
+                $remainder = $num % 10000000;
+                return convertToWords($crores, $ones, $tens) . ' CRORE' . ($crores > 1 ? 'S' : '') . ($remainder > 0 ? ' ' . convertToWords($remainder, $ones, $tens) : '');
+            }
+            
+            $integerPart = floor($number);
+            $decimalPart = round(($number - $integerPart) * 10);
+            $words = convertToWords($integerPart, $ones, $tens);
+            if ($decimalPart > 0) {
+                $words .= ' POINT ' . $ones[$decimalPart];
+            }
+        @endphp
+        {{ strtoupper($words) }}  ONLY
+    </div>
+    
+    <!-- Terms and Conditions -->
+    <div class="terms-section">
+        <div class="terms-title">Terms and Conditions: -</div>
+        <div class="terms-content">
+PAYMENT TERMS : 25% VANCE (PART PAYMENT ALLOWED) & 75% LANCE BY T/T OR L/C BEFORE SHIPMENT
+            <br>
+            PARTIAL SHIPMENT : ALLOWED
+        </div>
+    </div>
+    
+    <!-- Bank Details -->
+    @if(isset($proformaInvoice->seller) && isset($proformaInvoice->seller->bankDetails) && $proformaInvoice->seller->bankDetails->count() > 0)
+    <div class="bank-section">
+        <div class="bank-title">Bank Detail:-</div>
+        @foreach($proformaInvoice->seller->bankDetails as $bank)
+        <div class="bank-detail">
+            @if(isset($bank->account_holder_name) && $bank->account_holder_name)
+                Firm Name: {{ $bank->account_holder_name }}<br>
+            @elseif(isset($proformaInvoice->seller->seller_name) && $proformaInvoice->seller->seller_name)
+                Firm Name: {{ $proformaInvoice->seller->seller_name }}<br>
+            @endif
+            @if(isset($bank->account_number) && $bank->account_number)
+                A/c No: {{ $bank->account_number }}<br>
+            @endif
+            @if(isset($bank->bank_name) && $bank->bank_name)
+                Bank Name: {{ $bank->bank_name }}<br>
+            @endif
+            @if(isset($bank->swift_code) && $bank->swift_code)
+                SWIFT Code: {{ $bank->swift_code }}<br>
+            @elseif(isset($bank->ifsc_code) && $bank->ifsc_code)
+                IFSC Code: {{ $bank->ifsc_code }}<br>
+            @endif
+        </div>
+        @if(!$loop->last)<br>@endif
+        @endforeach
+    </div>
+    @endif
+    
+     <!-- For Section -->
+    <div class="for-section">
+        <div class="for-label">For,</div>
+        <div class="for-company-name">{{ isset($proformaInvoice->seller->seller_name) ? $proformaInvoice->seller->seller_name : 'Company Name' }}</div>
+    </div>
+    
+    <!-- Signature Section -->
+    <div class="signature-section">
+        <div class="signature-left">
+            @if(isset($proformaInvoice->seller->signature) && $proformaInvoice->seller->signature)
+                <img src="{{ asset('storage/' . $proformaInvoice->seller->signature) }}" alt="Signature" class="signature-img">
+            @else
+                <div style="height: 80px;"></div>
+            @endif
+        </div>
+        <div class="signature-right">
+            @if(isset($proformaInvoice->seller->logo) && $proformaInvoice->seller->logo)
+                <img src="{{ asset('storage/' . $proformaInvoice->seller->logo) }}" alt="Stamp" class="stamp-img">
+            @else
+                <div style="height: 80px; width: 80px; border: 2px solid #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center;">
+                    STAMP
+                </div>
+            @endif
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer-section">
+        <div class="footer-company">{{ isset($proformaInvoice->seller->seller_name) ? $proformaInvoice->seller->seller_name : 'Company Name' }}</div>
+        <div class="footer-details">
+            @php
+                $footerParts = [];
+                if(isset($proformaInvoice->seller->address) && $proformaInvoice->seller->address) {
+                    $footerParts[] = $proformaInvoice->seller->address;
+                }
+                if(isset($proformaInvoice->seller->mobile) && $proformaInvoice->seller->mobile) {
+                    $footerParts[] = $proformaInvoice->seller->mobile;
+                }
+                if(isset($proformaInvoice->seller->email) && $proformaInvoice->seller->email) {
+                    $footerParts[] = $proformaInvoice->seller->email;
+                }
+            @endphp
+            {{ implode(', ', $footerParts) }}
+            @if(empty($footerParts))
+                Company Address
+            @endif
+        </div>
+    </div>
+</body>
+</html>

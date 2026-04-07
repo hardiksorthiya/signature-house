@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta charset="utf-8">
+    <title>Proforma Invoice - {{ $proformaInvoice->proforma_invoice_number }}</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            color: #000;
+            margin: 20px;
+            padding: 0;
+            line-height: 1.4;
+        }
+        
+        .company-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .company-name {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .company-address {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    margin: 10px 0;
+}
+        
+        .separator-line {
+            border-top: 3px solid #000;
+            margin: 10px 0 15px 0;
+        }
+        
+        .invoice-title {
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    margin: 15px 0 20px 0;
+    text-transform: uppercase;
+}
+        
+        .invoice-meta {
+            width: 100%;
+            margin-bottom: 20px;
+            text-align: right;
+        }
+        
+        .invoice-meta-item {
+            font-family: Arial, Helvetica, sans-serif;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        
+        .invoice-label {
+            font-weight: bold;
+        }
+        
+        .recipient-section {
+            margin-bottom: 25px;
+        }
+        
+        .recipient-label {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 11px;
+        }
+        
+        .recipient-name {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: bold;
+            margin-bottom: 3px;
+            font-size: 15px;
+        }
+        
+        .recipient-address {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: 1px solid #000;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        .products-table th {
+    border: 1px solid #000;
+    padding: 20px 8px;
+    text-align: left;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    font-size: 14px;
+    text-transform: uppercase;
+    text-align: center;
+}
+        
+        .products-table td {
+    border: 1px solid #000;
+    padding: 20px 8px;
+    font-size: 10px;
+    vertical-align: top;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: center;
+}
+        
+        .shipping-marks {
+            width: 15%;
+        }
+        
+        .good-description {
+            width: 50%;
+            line-height: 1.4;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        .quantity {
+            width: 15%;
+            text-align: center;
+        }
+        
+        .total-amount {
+            width: 20%;
+            text-align: right;
+        }
+        
+        .summary-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .summary-row td {
+            text-align: right;
+            padding-right: 15px;
+        }
+        .summary-label {
+            text-align: left !important;
+            padding-left: 15px;
+        }
+        .final-amount-row {
+            border-top: 2px solid #000;
+        }
+        
+        .pricing-summary {
+            margin-top: 20px;
+            text-align: right;
+            width: 100%;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        .pricing-item {
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        .pricing-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+            text-align: right;
+            margin-right: 10px;
+        }
+        
+        .pricing-value {
+            display: inline-block;
+            min-width: 100px;
+            text-align: right;
+        }
+        
+        .final-amount {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #000;
+        }
+        
+        .terms-section {
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        .term-item {
+            margin-bottom: 10px;
+            font-size: 11px;
+            line-height: 1.5;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        .term-label {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: bold;
+        }
+        
+        .bank-section {
+            margin-top: 25px;
+            margin-bottom: 20px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        .bank-title {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 10px;
+        }
+        
+        .bank-info {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
+            line-height: 1.6;
+            margin-left: 20px;
+        }
+        
+        .bank-info-item {
+            margin-bottom: 5px;
+        }
+        
+        .bank-label {
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: bold;
+        }
+        
+        .signature-section {
+            margin-top: 40px;
+            text-align: left;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        .signature-company-chinese {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .signature-company-english {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .signature-line {
+            margin-top: 60px;
+            border-top: 1px solid #000;
+            width: 200px;
+            display: inline-block;
+        }
+        
+        .signature-name {
+            font-family: Arial, Helvetica, sans-serif;
+            margin-top: 5px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Company Header -->
+    <div class="company-header">
+        <div class="company-name">{{ (isset($seller) && isset($seller->seller_name)) ? $seller->seller_name : 'COMPANY NAME' }}</div>
+        <div class="company-address">{{ (isset($seller) && isset($seller->address)) ? $seller->address : 'Company Address' }}</div>
+    </div>
+    
+    <div class="separator-line"></div>
+    
+    <!-- Invoice Title -->
+    <div class="invoice-title">PROFORMA INVOICE</div>
+    
+    <!-- Invoice Meta Information (Right Aligned) -->
+    <div class="invoice-meta">
+        <div class="invoice-meta-item">
+            <span class="invoice-label">INVOICE NO:</span> {{ isset($proformaInvoice->proforma_invoice_number) ? $proformaInvoice->proforma_invoice_number : 'N/A' }}
+        </div>
+        <div class="invoice-meta-item">
+            <span class="invoice-label">DATE:</span> {{ (isset($proformaInvoice->created_at) && $proformaInvoice->created_at) ? $proformaInvoice->created_at->format('d-m-Y') : date('d-m-Y') }}
+        </div>
+    </div>
+    
+    <!-- Recipient Information -->
+    <div class="recipient-section">
+        <div class="recipient-label">TO:</div>
+        <div class="recipient-name">{{ isset($proformaInvoice->buyer_company_name) ? $proformaInvoice->buyer_company_name : 'Buyer Company Name' }}</div>
+        <div class="recipient-address">
+            @if(isset($proformaInvoice->billing_address) && $proformaInvoice->billing_address)
+                {{ $proformaInvoice->billing_address }}
+            @endif
+            @if(isset($proformaInvoice->contract) && $proformaInvoice->contract && isset($proformaInvoice->contract->city) && $proformaInvoice->contract->city)
+                <br>{{ isset($proformaInvoice->contract->city->name) ? $proformaInvoice->contract->city->name : '' }}{{ (isset($proformaInvoice->contract->state) && $proformaInvoice->contract->state && isset($proformaInvoice->contract->state->name)) ? ', ' . $proformaInvoice->contract->state->name : '' }}{{ (isset($proformaInvoice->contract->area) && $proformaInvoice->contract->area && isset($proformaInvoice->contract->area->name)) ? ', ' . $proformaInvoice->contract->area->name : '' }}
+            @endif
+            @if(isset($proformaInvoice->contract) && $proformaInvoice->contract && isset($proformaInvoice->contract->country) && $proformaInvoice->contract->country)
+                <br>{{ isset($proformaInvoice->contract->country->name) ? $proformaInvoice->contract->country->name : '' }}.
+            @endif
+        </div>
+    </div>
+    
+    <!-- Products Table -->
+    <table class="products-table">
+        <thead>
+            <tr>
+                <th class="shipping-marks">SHIPPING MARKS</th>
+                <th class="good-description">GOOD DESCRIPTION</th>
+                <th class="quantity">QUANTITY (sets)</th>
+                <th class="total-amount">TOTAL AMOUNT (USD)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php
+                $totalAmount = 0;
+                $totalAMC = 0;
+            @endphp
+            @foreach($proformaInvoice->proformaInvoiceMachines ?? [] as $index => $machine)
+            @php
+                // Calculate amounts for summary
+                $machineAmount = (isset($machine->amount) ? $machine->amount : 0) * (isset($machine->quantity) ? $machine->quantity : 0);
+                $totalAmount += $machineAmount;
+                $amcPrice = isset($machine->amc_price) ? $machine->amc_price : 0;
+                if($amcPrice > 0) {
+                    $totalAMC += $amcPrice;
+                }
+            @endphp
+            <tr>
+                <td class="shipping-marks">
+                    @if(isset($machine->contractMachine) && isset($machine->contractMachine->machineCategory) && $machine->contractMachine->machineCategory)
+                        {{ $machine->contractMachine->machineCategory->name }}
+                    @else
+                        Machine
+                    @endif
+                </td>
+                <td class="good-description">
+                    @php
+                        $description = [];
+                        if(isset($machine->contractMachine)) {
+                            // Model
+                            if(isset($machine->contractMachine->machineModel) && $machine->contractMachine->machineModel && isset($machine->contractMachine->machineModel->model_no)) {
+                                $description[] = 'Model: ' . $machine->contractMachine->machineModel->model_no;
+                            }
+                            // Hooks
+                            if(isset($machine->contractMachine->machineHook) && $machine->contractMachine->machineHook && isset($machine->contractMachine->machineHook->hook)) {
+                                $description[] = 'Hooks: ' . $machine->contractMachine->machineHook->hook;
+                            }
+                            // Beam
+                            if(isset($machine->contractMachine->machineBeam) && $machine->contractMachine->machineBeam && isset($machine->contractMachine->machineBeam->name)) {
+                                $description[] = 'Beam: ' . $machine->contractMachine->machineBeam->name;
+                            }
+                            // Cloth Roller
+                            if(isset($machine->contractMachine->machineClothRoller) && $machine->contractMachine->machineClothRoller && isset($machine->contractMachine->machineClothRoller->name)) {
+                                $description[] = 'Cloth Roller: ' . $machine->contractMachine->machineClothRoller->name;
+                            }
+                            // CAM-Chain
+                            if(isset($machine->contractMachine->machineChain) && $machine->contractMachine->machineChain && isset($machine->contractMachine->machineChain->name)) {
+                                $description[] = 'CAM-Chain: ' . $machine->contractMachine->machineChain->name;
+                            }
+                            // Heald Wires
+                            if(isset($machine->contractMachine->machineHealdWire) && $machine->contractMachine->machineHealdWire && isset($machine->contractMachine->machineHealdWire->name)) {
+                                $description[] = 'Heald Wires: ' . $machine->contractMachine->machineHealdWire->name;
+                            }
+                            // E Read
+                            if(isset($machine->contractMachine->machineERead) && $machine->contractMachine->machineERead && isset($machine->contractMachine->machineERead->name)) {
+                                $description[] = 'E Read: ' . $machine->contractMachine->machineERead->name;
+                            }
+                            // Feeder (with brand if available)
+                            if(isset($machine->contractMachine->feeder) && $machine->contractMachine->feeder) {
+                                $feederText = '';
+                                if(isset($machine->contractMachine->feeder->feederBrand) && $machine->contractMachine->feeder->feederBrand && isset($machine->contractMachine->feeder->feederBrand->name)) {
+                                    $feederText = $machine->contractMachine->feeder->feederBrand->name . ' - ';
+                                }
+                                if(isset($machine->contractMachine->feeder->feeder)) {
+                                    $feederText .= $machine->contractMachine->feeder->feeder;
+                                    $description[] = 'Feeder: ' . $feederText;
+                                }
+                            }
+                            // Color
+                            if(isset($machine->contractMachine->color) && $machine->contractMachine->color && isset($machine->contractMachine->color->name)) {
+                                $description[] = 'Color: ' . $machine->contractMachine->color->name;
+                            }
+                            // Nozzle
+                            if(isset($machine->contractMachine->machineNozzle) && $machine->contractMachine->machineNozzle && isset($machine->contractMachine->machineNozzle->nozzle)) {
+                                $description[] = 'Nozzle: ' . $machine->contractMachine->machineNozzle->nozzle;
+                            }
+                            // Dropin
+                            if(isset($machine->contractMachine->machineDropin) && $machine->contractMachine->machineDropin && isset($machine->contractMachine->machineDropin->name)) {
+                                $description[] = 'Dropin: ' . $machine->contractMachine->machineDropin->name;
+                            }
+                            // Software
+                            if(isset($machine->contractMachine->machineSoftware) && $machine->contractMachine->machineSoftware && isset($machine->contractMachine->machineSoftware->name)) {
+                                $description[] = 'Software: ' . $machine->contractMachine->machineSoftware->name;
+                            }
+                            // Shaft
+                            if(isset($machine->contractMachine->machineShaft) && $machine->contractMachine->machineShaft && isset($machine->contractMachine->machineShaft->name)) {
+                                $description[] = 'Shaft: ' . $machine->contractMachine->machineShaft->name;
+                            }
+                            // Lever
+                            if(isset($machine->contractMachine->machineLever) && $machine->contractMachine->machineLever && isset($machine->contractMachine->machineLever->name)) {
+                                $description[] = 'Lever: ' . $machine->contractMachine->machineLever->name;
+                            }
+                        }
+                        // Machine description field
+                        if(isset($machine->description) && $machine->description) {
+                            $description[] = $machine->description;
+                        }
+                        
+                        // Separate WIR and HSN Code to display on new lines
+                        $wirText = '';
+                        $hsnText = '';
+                        if(isset($machine->contractMachine)) {
+                            // WIR
+                            if(isset($machine->contractMachine->wir) && $machine->contractMachine->wir && isset($machine->contractMachine->wir->name)) {
+                                $wirText = 'WIR: ' . $machine->contractMachine->wir->name;
+                            }
+                            // HSN Code
+                            if(isset($machine->contractMachine->hsnCode) && $machine->contractMachine->hsnCode && isset($machine->contractMachine->hsnCode->name)) {
+                                $hsnText = 'HSN Code: ' . $machine->contractMachine->hsnCode->name;
+                            }
+                        }
+                    @endphp
+                    @if(!empty($description))
+                        {{ implode(', ', $description) }}
+                    @endif
+                    @if($wirText || $hsnText)
+                        @if(!empty($description))
+                            <br>
+                        @endif
+                        @if($wirText)
+                            {{ $wirText }}
+                        @endif
+                        @if($wirText && $hsnText)
+                            <br>
+                        @endif
+                        @if($hsnText)
+                            {{ $hsnText }}
+                        @endif
+                    @endif
+                </td>
+                <td class="quantity">{{ isset($machine->quantity) ? $machine->quantity : 0 }}</td>
+                <td class="total-amount">
+                    ${{ number_format((isset($machine->amount) ? $machine->amount : 0) * (isset($machine->quantity) ? $machine->quantity : 0), 2) }}
+                </td>
+            </tr>
+            @endforeach
+            
+            <!-- Summary Rows -->
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">Total PI Price</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($totalAmount, 2) }}</td>
+            </tr>
+            @if($totalAMC > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">AMC</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($totalAMC, 2) }}</td>
+            </tr>
+            @endif
+            @if(($proformaInvoice->overseas_freight ?? 0) > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">Overseas Freight Approx</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->overseas_freight, 2) }}</td>
+            </tr>
+            @endif
+            @if(($proformaInvoice->port_expenses_clearing ?? 0) > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">Port Exp + Clearing Exp Approx</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->port_expenses_clearing, 2) }}</td>
+            </tr>
+            @endif
+            @if(($proformaInvoice->gst_amount ?? 0) > 0)
+            <tr class="summary-row">
+                <td colspan="3" class="summary-label">GST Amount</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->gst_amount, 2) }}</td>
+            </tr>
+            @endif
+            <tr class="summary-row final-amount-row">
+                <td colspan="3" class="summary-label">Final Amount</td>
+                <td class="col-amount">{{ $proformaInvoice->currency === 'INR' ? '₹' : '$' }}{{ number_format($proformaInvoice->total_amount, 2) }}</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <!-- Pricing Summary -->
+    <div class="pricing-summary">
+        <div class="pricing-item">
+            <span class="pricing-label">Total PI Price:</span>
+            <span class="pricing-value">${{ number_format((isset($proformaInvoice->proformaInvoiceMachines) && $proformaInvoice->proformaInvoiceMachines) ? $proformaInvoice->proformaInvoiceMachines->sum(function($m) { return (isset($m->amount) ? $m->amount : 0) * (isset($m->quantity) ? $m->quantity : 0); }) : 0, 2) }}</span>
+        </div>
+        <div class="pricing-item final-amount">
+            <span class="pricing-label">Final Amount:</span>
+            <span class="pricing-value">USD {{ number_format(isset($proformaInvoice->total_amount) ? $proformaInvoice->total_amount : 0, 2) }}</span>
+        </div>
+        <div class="pricing-item">
+            <span class="pricing-label">Final Amount:</span>
+            <span class="pricing-value">$ {{ number_format(isset($proformaInvoice->total_amount) ? $proformaInvoice->total_amount : 0, 2) }}</span>
+        </div>
+    </div>
+    
+    <!-- Terms and Conditions -->
+    <div class="terms-section">
+        <div class="term-item">
+            <span class="term-label">1. DELIVERY TERMS:</span>
+            @if(isset($proformaInvoice->contract) && $proformaInvoice->contract && isset($proformaInvoice->contract->delivery_term) && $proformaInvoice->contract->delivery_term && isset($proformaInvoice->contract->delivery_term->name))
+                {{ $proformaInvoice->contract->delivery_term->name }}
+            @else
+                WITHIN 60 DAYS AFTER RECEIVING PAYMENT
+            @endif
+        </div>
+        @if(isset($proformaInvoice->contract) && $proformaInvoice->contract && isset($proformaInvoice->contract->payment_terms) && $proformaInvoice->contract->payment_terms)
+        <div class="term-item">
+            <span class="term-label">2. PAYMENT TERMS:</span>
+            {{ $proformaInvoice->contract->payment_terms }}
+        </div>
+        @endif
+        @if(isset($proformaInvoice->contract) && $proformaInvoice->contract && isset($proformaInvoice->contract->loading_terms) && $proformaInvoice->contract->loading_terms)
+        <div class="term-item">
+            <span class="term-label">3. LOADING TERMS:</span>
+            {{ $proformaInvoice->contract->loading_terms }}
+        </div>
+        @endif
+    </div>
+    
+    <!-- Bank Information -->
+    @if($seller && $seller->bankDetails && $seller->bankDetails->count() > 0)
+    <div class="bank-section">
+        <div class="bank-title">2. BANK INFORMATION:</div>
+        @foreach($seller->bankDetails as $bank)
+        <div class="bank-info">
+            <div class="bank-info-item">
+                <span class="bank-label">Beneficiary Name:</span> {{ $seller->seller_name }}
+            </div>
+            <div class="bank-info-item">
+                <span class="bank-label">Beneficiary Address:</span> {{ $seller->address }}
+                @if(isset($seller->country) && $seller->country)
+                    , {{ $seller->country->name }}
+                @endif
+            </div>
+            @if(isset($bank->account_number) && $bank->account_number)
+            <div class="bank-info-item">
+                <span class="bank-label">Bank Account No.:</span> {{ $bank->account_number }}
+            </div>
+            @endif
+            @if(isset($bank->bank_address) && $bank->bank_address)
+            <div class="bank-info-item">
+                <span class="bank-label">Bank Address:</span> {{ $bank->bank_address }}
+            </div>
+            @endif
+            @if(isset($bank->ifsc_code) && $bank->ifsc_code)
+            <div class="bank-info-item">
+                <span class="bank-label">SWIFT BIC:</span> {{ $bank->ifsc_code }}
+            </div>
+            @endif
+        </div>
+        @endforeach
+    </div>
+    @endif
+    
+    <!-- Signature Section -->
+    <div class="signature-section">
+        @if(isset($seller->seller_name_chinese) && $seller->seller_name_chinese)
+            <div class="signature-company-chinese">{{ $seller->seller_name_chinese }}</div>
+        @endif
+        <div class="signature-company-english">{{ $seller->seller_name ?? 'COMPANY NAME' }}</div>
+        @if(isset($seller->signature) && $seller->signature)
+            <div style="margin-top: 20px;">
+                <img src="{{ asset('storage/' . $seller->signature) }}" alt="Signature" style="max-height: 60px; max-width: 200px;">
+            </div>
+        @else
+            <div class="signature-line"></div>
+            <div class="signature-name">Authorized Signature</div>
+        @endif
+    </div>
+</body>
+</html>
