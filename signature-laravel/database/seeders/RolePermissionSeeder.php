@@ -152,6 +152,12 @@ class RolePermissionSeeder extends Seeder
             'edit task',
             'delete task',
 
+            // Old Data Management
+            'view old data',
+            'create old data',
+            'edit old data',
+            'delete old data',
+
             // Complain Management
             'view complain',
             'create complain',

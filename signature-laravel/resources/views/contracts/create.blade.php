@@ -479,7 +479,8 @@
                             </div>
                         </div>
 
-                        <!-- Other Buyer Expenses Details Section -->
+                        <!-- Other Buyer Expenses Details Section (toggle via SHOW_OTHER_BUYER_EXPENSES_SECTION in .env) -->
+                        @if(\App\Models\Contract::showOtherBuyerExpensesSection())
                         @php $createShowBuyerExp = filter_var(old('other_buyer_expenses_in_print', $settings->global_other_buyer_expenses_in_print ?? true), FILTER_VALIDATE_BOOLEAN); @endphp
                         <div class="row mt-4 mb-4">
                             <div class="col-12">
@@ -562,6 +563,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
                         <!-- Other Details Section -->
                         @php $createShowOtherDet = filter_var(old('other_details_in_print', $settings->global_other_details_in_print ?? true), FILTER_VALIDATE_BOOLEAN); @endphp
@@ -617,6 +619,13 @@
                             </div>
                         </div>
 
+                        @include('contracts.partials.not-included-in-offer-section', [
+                            'nioFieldPrefix' => 'not_included_in_offer',
+                            'nioPrintField' => 'not_included_in_offer_in_print',
+                            'nioShowPrint' => filter_var(old('not_included_in_offer_in_print', $settings->global_not_included_in_offer_in_print ?? true), FILTER_VALIDATE_BOOLEAN),
+                            'nioFlags' => \App\Models\Contract::mergeNotIncludedInOfferFlags(old('not_included_in_offer'), $settings->global_not_included_in_offer),
+                        ])
+
                         <!-- Difference of Specification Section -->
                         @php $createShowSpecMain = filter_var(old('difference_specification_in_print', $settings->global_difference_specification_in_print ?? true), FILTER_VALIDATE_BOOLEAN); @endphp
                         <div class="row mb-4">
@@ -624,7 +633,7 @@
                                 <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;" x-data="{ showFields: {{ $createShowSpecMain ? 'true' : 'false' }} }">
                                     <div class="card-body p-4">
                                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification</h5>
+                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification (Rapier - Jacquard)n</h5>
                                             <div class="d-flex align-items-center flex-wrap gap-2">
                                                 <label class="form-label fw-medium mb-0" style="color: #374151;">In Print :</label>
                                                 <div class="btn-group" role="group">
@@ -706,14 +715,14 @@
                             </div>
                         </div>
 
-                        <!-- Difference of Specification (Additional) -->
+                        <!-- Difference of Specification (Airjet) -->
                         @php $createShowSpecExt = filter_var(old('difference_specification_extended_in_print', $settings->global_difference_specification_extended_in_print ?? false), FILTER_VALIDATE_BOOLEAN); @endphp
                         <div class="row mb-4">
                             <div class="col-12">
                                 <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;" x-data="{ showFields: {{ $createShowSpecExt ? 'true' : 'false' }} }">
                                     <div class="card-body p-4">
                                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification (Additional)</h5>
+                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification (Airjet)</h5>
                                             <div class="d-flex align-items-center flex-wrap gap-2">
                                                 <label class="form-label fw-medium mb-0" style="color: #374151;">In Print :</label>
                                                 <div class="btn-group" role="group">
@@ -741,14 +750,14 @@
                             </div>
                         </div>
 
-                        <!-- Difference of Specification 3 -->
+                        <!-- Difference of Specification (Waterjet) -->
                         @php $createShowSpec3 = filter_var(old('difference_specification_3_in_print', $settings->global_difference_specification_3_in_print ?? false), FILTER_VALIDATE_BOOLEAN); @endphp
                         <div class="row mb-4">
                             <div class="col-12">
                                 <div class="card shadow-sm border-0" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;" x-data="{ showFields: {{ $createShowSpec3 ? 'true' : 'false' }} }">
                                     <div class="card-body p-4">
                                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification 3</h5>
+                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification (Waterjet)</h5>
                                             <div class="d-flex align-items-center flex-wrap gap-2">
                                                 <label class="form-label fw-medium mb-0" style="color: #374151;">In Print :</label>
                                                 <div class="btn-group" role="group">

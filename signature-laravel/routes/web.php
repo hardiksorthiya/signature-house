@@ -48,6 +48,7 @@ use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StorageController;
 use App\Http\Controllers\DashboardChartController;
+use App\Http\Controllers\OldDataController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -695,6 +696,24 @@ Route::middleware('auth')->group(function () {
     
     // Tasks Routes - Available to all authenticated users
     Route::resource('tasks', TaskController::class);
+
+    // Old Data Routes (permission based)
+    Route::middleware(['permission:view old data'])->group(function () {
+        Route::get('/old-data', [OldDataController::class, 'index'])->name('old-data.index');
+        Route::get('/old-data/download-template', [OldDataController::class, 'downloadTemplate'])->name('old-data.download-template');
+    });
+    Route::middleware(['permission:create old data'])->group(function () {
+        Route::get('/old-data/create', [OldDataController::class, 'create'])->name('old-data.create');
+        Route::post('/old-data', [OldDataController::class, 'store'])->name('old-data.store');
+        Route::post('/old-data/import', [OldDataController::class, 'importExcel'])->name('old-data.import');
+    });
+    Route::middleware(['permission:edit old data'])->group(function () {
+        Route::get('/old-data/{oldDatum}/edit', [OldDataController::class, 'edit'])->name('old-data.edit');
+        Route::put('/old-data/{oldDatum}', [OldDataController::class, 'update'])->name('old-data.update');
+    });
+    Route::middleware(['permission:delete old data'])->group(function () {
+        Route::delete('/old-data/{oldDatum}', [OldDataController::class, 'destroy'])->name('old-data.destroy');
+    });
 
     // Complain (Complaint) Routes - Permission based
     Route::middleware(['permission:view complain'])->group(function () {

@@ -366,6 +366,15 @@
     </a>
     @endcan
 
+    @can('view old data')
+    <a
+        href="{{ route('old-data.index') }}"
+        class="d-flex align-items-center px-3 py-2 mb-1 text-decoration-none rounded sidebar-link {{ request()->routeIs('old-data.*') ? 'sidebar-active' : '' }}">
+        <i class="fas fa-database me-3 sidebar-icon"></i>
+        <span class="fw-medium">Old Data</span>
+    </a>
+    @endcan
+
     @can('view complain')
     <a 
         href="{{ route('complaints.index') }}" 

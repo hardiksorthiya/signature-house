@@ -6,10 +6,10 @@
     <title>Contract - {{ $contract->contract_number }}</title>
     <style>
         @page {
-            margin-top: 5mm;
-            margin-bottom: 5mm;
-            margin-left: 10mm;
-            margin-right: 10mm;
+            margin-top: 3mm;
+            margin-bottom: 3mm;
+            margin-left: 3mm;
+            margin-right: 3mm;
         }
         body {
             font-family: Arial, sans-serif;
@@ -29,32 +29,31 @@
             margin-bottom: 5px;
         }
         .firm-logo {
-            max-width: 200px;
-            max-height: 80px;
+            /* max-width: 200px;
+            max-height: 80px; */
             margin: 0 auto 10px;
             display: block;
         }
         .company-name {
             font-size: 14px;
             color: #000;
-            margin-bottom: 10px;
         }
         .company-address {
             font-size: 12px;
             color: #212121;
-            margin-bottom: 10px;
+            margin-bottom: 0;
         }
         .title {
             text-align: center;
             font-size: 20px;
             font-weight: bold;
             color: #dc2626;
-            margin: 20px 0;
+            margin-top: 0;
         }
         .customer-info {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 5px;
+            margin-top: 0;
         }
         .customer-info td {
             padding: 8px;
@@ -72,21 +71,6 @@
         .machine-section {
             margin-top: 0;
             page-break-inside: avoid;
-            background: #f9f9f9;
-            
-        }
-        .machine-title {
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-            padding: 10px 0;
-        }
-        .machine-title-main {
-            color: #dc2626;
-        }
-        .machine-title-category {
-            text-transform: uppercase;
-            color: #dc2626;
         }
         .machine-table {
             width: 100%;
@@ -105,24 +89,8 @@
             background-color: #ffffff;
             width: 30%;
         }
-        .machine-total-section {
-            margin-top: 20px;
-            text-align: right;
-            font-size: 14px;
-            font-weight: bold;
-            padding: 10px;
-            border-top: 2px solid #5e5e5e;
-        }
-        .machine-total-label {
-            display: inline-block;
-            margin-right: 20px;
-        }
-        .machine-total-amount {
-            font-size: 16px;
-            color: #dc2626;
-        }
         .total-section {
-            margin-top: 30px;
+            margin-top: 5px;
             text-align: right;
             font-size: 14px;
             font-weight: bold;
@@ -131,18 +99,23 @@
             font-family: 'DejaVu Sans', Arial, sans-serif;
         }
         .other-details-section {
-            margin-top: 10px;
+            margin-top: 5px;
             margin-bottom: 10px;
             page-break-inside: auto;
-            background: #f9f9f9;
         }
-        .other-details-title {
+         .pdf-section-title-wrap {
+            text-align: center;
+            margin: 5px 0;
+        }
+        .pdf-section-title {
+            display: inline-block;
             font-size: 16px;
             font-weight: bold;
-            text-align: center;
-            padding: 8px 0 5px 0;
-            color: #dc2626;
             text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #dc2626;
+            background-color: #dc262615;
+            padding: 4px 8px;
             margin: 0;
         }
         .other-details-table {
@@ -176,8 +149,28 @@
             font-size: 12px;
             font-family: Arial, sans-serif;
             vertical-align: top;
-            line-height: 1.45;
             background-color: #ffffff;
+        }
+        /* Not Included in Offer — 4-column bullet grid (title uses .pdf-section-title-wrap / .pdf-section-title) */
+        .not-included-offer-block {
+            margin-top: 5px;
+            margin-bottom: 5px;
+            page-break-inside: avoid;
+        }
+        .not-included-offer-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+            background: #ffffff;
+        }
+        .not-included-offer-grid td {
+            width: 25%;
+            border: 1px solid #5e5e5e;
+            font-size: 12px;
+            vertical-align: middle;
+            text-align: center;
+            padding: 6px 8px;
+            color: #212121;
         }
     </style>
 </head>
@@ -232,11 +225,12 @@
             $grandTotal += $machineTotal;
         @endphp
         <div class="machine-section">
-            <div class="machine-title">
-                <span class="machine-title-main">MACHINE SPECIFICATION</span>
-                @if($machine->machineCategory)
-                    <span class="machine-title-category"> - {{ $machine->machineCategory->name }}</span>
-                @endif
+            <div class="pdf-section-title-wrap">
+                <span class="pdf-section-title">MACHINE SPECIFICATION
+                    @if($machine->machineCategory)
+                        &nbsp;— {{ $machine->machineCategory->name }}
+                    @endif
+                </span>
             </div>
             <table class="machine-table">
                 @php
@@ -302,7 +296,7 @@
     @php $expenseFields = $contract->otherBuyerExpensesPdfRows(); @endphp
     @if(count($expenseFields) > 0)
     <div class="other-details-section">
-        <div class="other-details-title">OTHER BUYER EXPENSES DETAILS</div>
+        <div class="pdf-section-title-wrap"><span class="pdf-section-title">OTHER BUYER EXPENSES DETAILS</span></div>
         <table class="other-details-table expenses-details-table">
             @for($i = 0; $i < count($expenseFields); $i += 2)
                 @if(isset($expenseFields[$i]))
@@ -326,7 +320,7 @@
     @php $otherDetailFields = $contract->otherDetailsPdfRows(); @endphp
     @if(count($otherDetailFields) > 0)
     <div class="other-details-section">
-        <div class="other-details-title">OTHER DETAILS</div>
+        <div class="pdf-section-title-wrap"><span class="pdf-section-title">OTHER DETAILS</span></div>
         <table class="other-details-table">
             @for($i = 0; $i < count($otherDetailFields); $i += 2)
                 @if(isset($otherDetailFields[$i]))
@@ -346,10 +340,33 @@
     </div>
     @endif
 
+    @php
+        $nioPdfLabels = $contract->notIncludedInOfferPdfLabels();
+        $nioPdfRows = count($nioPdfLabels) > 0 ? array_chunk($nioPdfLabels, 4) : [];
+    @endphp
+    @if(count($nioPdfRows) > 0)
+    <div class="not-included-offer-block">
+        <div class="pdf-section-title-wrap"><span class="pdf-section-title">NOT INCLUDED IN OFFER</span></div>
+        <table class="not-included-offer-grid">
+            @foreach($nioPdfRows as $row)
+                <tr>
+                    @for($c = 0; $c < 4; $c++)
+                        <td>
+                            @isset($row[$c])
+                                &bull; {{ $row[$c] }}
+                            @endisset
+                        </td>
+                    @endfor
+                </tr>
+            @endforeach
+        </table>
+    </div>
+    @endif
+
     <!-- Difference of Specification -->
     @if(count($contract->differenceSpecificationMainPrintRows()) > 0)
     <div class="other-details-section">
-        <div class="other-details-title">DIFFERENCE OF SPECIFICATION</div>
+        <div class="pdf-section-title-wrap"><span class="pdf-section-title">Difference of Specification (Rapier - Jacquard)</span></div>
         <table class="other-details-table">
             @php
                 $differenceFields = $contract->differenceSpecificationMainPrintRows();
@@ -373,10 +390,10 @@
     </div>
     @endif
 
-    <!-- Difference of Specification (Additional) -->
+    <!-- Difference of Specification (Airjet) -->
     @if(count($contract->differenceSpecificationExtendedPrintRows()) > 0)
     <div class="other-details-section">
-        <div class="other-details-title">DIFFERENCE OF SPECIFICATION (ADDITIONAL)</div>
+        <div class="pdf-section-title-wrap"><span class="pdf-section-title">Difference of Specification (Airjet)</span></div>
         <table class="other-details-table">
             @php
                 $differenceFieldsExt = $contract->differenceSpecificationExtendedPrintRows();
@@ -400,10 +417,10 @@
     </div>
     @endif
 
-    <!-- Difference of Specification 3 -->
+    <!-- Difference of Specification (Waterjet) -->
     @if(count($contract->differenceSpecification3PrintRows()) > 0)
     <div class="other-details-section">
-        <div class="other-details-title">DIFFERENCE OF SPECIFICATION 3</div>
+        <div class="pdf-section-title-wrap"><span class="pdf-section-title">Difference of Specification (Waterjet)</span></div>
         <table class="other-details-table">
             @php
                 $differenceFields3 = $contract->differenceSpecification3PrintRows();
@@ -431,7 +448,7 @@
     @php $termsPdfBlocks = $contract->termsConditionsPdfBlocks(); @endphp
     @if(count($termsPdfBlocks) > 0)
     <div class="other-details-section">
-        <div class="other-details-title">TERMS &amp; CONDITIONS</div>
+        <div class="pdf-section-title-wrap"><span class="pdf-section-title">TERMS &amp; CONDITIONS</span></div>
         <table class="other-details-table expenses-details-table">
             @foreach($termsPdfBlocks as $block)
                 <tr>

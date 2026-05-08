@@ -13,6 +13,7 @@ class PreErectionDetail extends Model
         'proforma_invoice_id',
         'technical_specification',
         'details',
+        'photo_path',
         'is_completed',
         'sort_order',
     ];

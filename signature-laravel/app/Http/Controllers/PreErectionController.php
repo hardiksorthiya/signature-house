@@ -28,6 +28,7 @@ class PreErectionController extends Controller
             'Availability of Route to Factory Entry',
             'Grease Pump and Air Pressure Blower Ready',
             'Marking for Machines Done',
+            'Camera',
         ];
     }
 

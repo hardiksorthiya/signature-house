@@ -201,7 +201,7 @@
                     @endif
 
                     <!-- Other Buyer Expenses Details -->
-                    @if($contract->other_buyer_expenses_in_print && ($contract->overseas_freight || $contract->demurrage_detention_cfs_charges || $contract->air_pipe_connection || $contract->custom_duty || $contract->port_expenses_transport || $contract->crane_foundation || $contract->humidification || $contract->damage || $contract->gst_custom_charges || $contract->compressor || $contract->optional_spares))
+                    @if(\App\Models\Contract::showOtherBuyerExpensesSection() && $contract->other_buyer_expenses_in_print && ($contract->overseas_freight || $contract->demurrage_detention_cfs_charges || $contract->air_pipe_connection || $contract->custom_duty || $contract->port_expenses_transport || $contract->crane_foundation || $contract->humidification || $contract->damage || $contract->gst_custom_charges || $contract->compressor || $contract->optional_spares))
                     <div class="mt-4 pt-4 border-top">
                         <h5 class="fw-semibold mb-3" style="color: #1f2937;">Other Buyer Expenses Details</h5>
                         <div class="row g-3">
@@ -278,7 +278,7 @@
                     <!-- Difference of Specification -->
                     @if($contract->hasDifferenceSpecificationContent())
                     <div class="mt-4 pt-4 border-top">
-                        <h5 class="fw-semibold mb-3" style="color: #1f2937;">Difference of Specification</h5>
+                        <h5 class="fw-semibold mb-3" style="color: #1f2937;">Difference of Specification (Rapier - Jacquard)</h5>
                         <div class="row g-3">
                             @foreach(\App\Models\Contract::differenceSpecificationLabels() as $field => $label)
                                 @if(filled($contract->{$field}))
@@ -292,10 +292,10 @@
                     </div>
                     @endif
 
-                    <!-- Difference of Specification (Additional) -->
+                    <!-- Difference of Specification (Airjet) -->
                     @if($contract->hasDifferenceSpecificationExtendedContent())
                     <div class="mt-4 pt-4 border-top">
-                        <h5 class="fw-semibold mb-3" style="color: #1f2937;">Difference of Specification (Additional)</h5>
+                        <h5 class="fw-semibold mb-3" style="color: #1f2937;">Difference of Specification (Airjet)</h5>
                         <div class="row g-3">
                             @foreach(\App\Models\Contract::differenceSpecificationExtendedLabels() as $field => $label)
                                 @if(filled($contract->{$field}))
@@ -312,10 +312,10 @@
                     </div>
                     @endif
 
-                    <!-- Difference of Specification 3 -->
+                    <!-- Difference of Specification (Waterjet) -->
                     @if($contract->hasDifferenceSpecification3Content())
                     <div class="mt-4 pt-4 border-top">
-                        <h5 class="fw-semibold mb-3" style="color: #1f2937;">Difference of Specification 3</h5>
+                        <h5 class="fw-semibold mb-3" style="color: #1f2937;">Difference of Specification (Waterjet)</h5>
                         <div class="row g-3">
                             @foreach(\App\Models\Contract::differenceSpecification3Labels() as $field => $label)
                                 @if(filled($contract->{$field}))
@@ -390,6 +390,29 @@
                         </div>
                     </div>
                     @endif
+
+                    <!-- Not Included in Offer -->
+                    @php
+                        $nioShow = \App\Models\Contract::mergeNotIncludedInOfferFlags(null, $contract->not_included_in_offer);
+                        $nioAny = in_array(true, $nioShow, true);
+                    @endphp
+                    <div class="mt-4 pt-4 border-top">
+                        <h5 class="fw-semibold mb-3" style="color: #1f2937;">Not Included in Offer</h5>
+                        @if(!($contract->not_included_in_offer_in_print ?? true))
+                            <p class="small text-muted mb-2">Hidden from print (PDF)</p>
+                        @endif
+                        @if($nioAny)
+                            <ul class="list-unstyled row g-2 mb-0">
+                                @foreach(config('not_included_in_offer.items', []) as $key => $label)
+                                    @if(!empty($nioShow[$key]))
+                                        <li class="col-md-6"><i class="fas fa-check text-success me-2"></i>{{ $label }}</li>
+                                    @endif
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="text-muted small mb-0">No items selected.</p>
+                        @endif
+                    </div>
 
                     <!-- Complaints (for this contract / client) -->
                     @can('view complain')

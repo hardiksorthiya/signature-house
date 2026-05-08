@@ -78,6 +78,8 @@ class Setting extends Model
         'global_terms_cancellation_order',
         'global_terms_jurisdiction_seller_rights',
         'global_terms_conditions_in_print',
+        'global_not_included_in_offer_in_print',
+        'global_not_included_in_offer',
     ];
 
     protected $casts = [
@@ -87,5 +89,7 @@ class Setting extends Model
         'global_difference_specification_extended_in_print' => 'boolean',
         'global_difference_specification_3_in_print' => 'boolean',
         'global_terms_conditions_in_print' => 'boolean',
+        'global_not_included_in_offer_in_print' => 'boolean',
+        'global_not_included_in_offer' => 'array',
     ];
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Contract;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -151,22 +152,27 @@ class SettingController extends Controller
             'global_terms_cancellation_order' => 'nullable|string|max:65535',
             'global_terms_jurisdiction_seller_rights' => 'nullable|string|max:65535',
             'global_terms_conditions_in_print' => 'nullable|boolean',
+            'global_not_included_in_offer_in_print' => 'nullable|boolean',
         ]);
 
+        $showObe = config('contract.show_other_buyer_expenses_section', false);
+
         $setting->update([
-            // Other Buyer Expenses Details
-            'global_overseas_freight' => $request->global_overseas_freight,
-            'global_demurrage_detention_cfs_charges' => $request->global_demurrage_detention_cfs_charges,
-            'global_air_pipe_connection' => $request->global_air_pipe_connection,
-            'global_custom_duty' => $request->global_custom_duty,
-            'global_port_expenses_transport' => $request->global_port_expenses_transport,
-            'global_crane_foundation' => $request->global_crane_foundation,
-            'global_humidification' => $request->global_humidification,
-            'global_damage' => $request->global_damage,
-            'global_gst_custom_charges' => $request->global_gst_custom_charges,
-            'global_compressor' => $request->global_compressor,
-            'global_optional_spares' => $request->global_optional_spares,
-            'global_other_buyer_expenses_in_print' => $request->has('global_other_buyer_expenses_in_print') ? (bool)$request->global_other_buyer_expenses_in_print : true,
+            // Other Buyer Expenses Details (unchanged in DB when section hidden)
+            'global_overseas_freight' => $showObe ? $request->global_overseas_freight : $setting->global_overseas_freight,
+            'global_demurrage_detention_cfs_charges' => $showObe ? $request->global_demurrage_detention_cfs_charges : $setting->global_demurrage_detention_cfs_charges,
+            'global_air_pipe_connection' => $showObe ? $request->global_air_pipe_connection : $setting->global_air_pipe_connection,
+            'global_custom_duty' => $showObe ? $request->global_custom_duty : $setting->global_custom_duty,
+            'global_port_expenses_transport' => $showObe ? $request->global_port_expenses_transport : $setting->global_port_expenses_transport,
+            'global_crane_foundation' => $showObe ? $request->global_crane_foundation : $setting->global_crane_foundation,
+            'global_humidification' => $showObe ? $request->global_humidification : $setting->global_humidification,
+            'global_damage' => $showObe ? $request->global_damage : $setting->global_damage,
+            'global_gst_custom_charges' => $showObe ? $request->global_gst_custom_charges : $setting->global_gst_custom_charges,
+            'global_compressor' => $showObe ? $request->global_compressor : $setting->global_compressor,
+            'global_optional_spares' => $showObe ? $request->global_optional_spares : $setting->global_optional_spares,
+            'global_other_buyer_expenses_in_print' => $showObe
+                ? ($request->has('global_other_buyer_expenses_in_print') ? (bool) $request->global_other_buyer_expenses_in_print : true)
+                : (bool) ($setting->global_other_buyer_expenses_in_print ?? true),
             // Other Details
             'global_payment_terms' => $request->global_payment_terms,
             'global_quote_validity' => $request->global_quote_validity,
@@ -218,6 +224,8 @@ class SettingController extends Controller
             'global_terms_cancellation_order' => $request->global_terms_cancellation_order,
             'global_terms_jurisdiction_seller_rights' => $request->global_terms_jurisdiction_seller_rights,
             'global_terms_conditions_in_print' => $request->has('global_terms_conditions_in_print') ? (bool)$request->global_terms_conditions_in_print : true,
+            'global_not_included_in_offer_in_print' => $request->has('global_not_included_in_offer_in_print') ? (bool) $request->global_not_included_in_offer_in_print : true,
+            'global_not_included_in_offer' => Contract::notIncludedInOfferPayloadFromRequest($request, 'global_not_included_in_offer'),
         ]);
 
         return redirect()->route('settings.contract-details')->with('success', 'Global contract details updated successfully.');

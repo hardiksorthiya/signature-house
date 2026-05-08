@@ -560,7 +560,7 @@ class LeadController extends Controller
 
         DB::beginTransaction();
         try {
-            $contract = Contract::create([
+            $contract = Contract::create(array_merge([
                 'lead_id' => $lead->id,
                 'created_by' => auth()->id(),
                 'business_firm_id' => $request->business_firm_id,
@@ -576,19 +576,7 @@ class LeadController extends Controller
                 'phone_number_2' => $request->phone_number_2,
                 'gst' => $request->gst,
                 'pan' => $request->pan,
-                // Other Buyer Expenses Details
-                'overseas_freight' => $request->overseas_freight,
-                'demurrage_detention_cfs_charges' => $request->demurrage_detention_cfs_charges,
-                'air_pipe_connection' => $request->air_pipe_connection,
-                'custom_duty' => $request->custom_duty,
-                'port_expenses_transport' => $request->port_expenses_transport,
-                'crane_foundation' => $request->crane_foundation,
-                'humidification' => $request->humidification,
-                'damage' => $request->damage,
-                'gst_custom_charges' => $request->gst_custom_charges,
-                'compressor' => $request->compressor,
-                'optional_spares' => $request->optional_spares,
-                'other_buyer_expenses_in_print' => $request->has('other_buyer_expenses_in_print') ? (bool)$request->other_buyer_expenses_in_print : true,
+            ], Contract::otherBuyerExpensesForStore($request), [
                 // Other Details
                 'payment_terms' => $request->payment_terms,
                 'quote_validity' => $request->quote_validity,
@@ -639,7 +627,9 @@ class LeadController extends Controller
                 'terms_cancellation_order' => $request->terms_cancellation_order,
                 'terms_jurisdiction_seller_rights' => $request->terms_jurisdiction_seller_rights,
                 'terms_conditions_in_print' => $request->boolean('terms_conditions_in_print', true),
-            ]);
+                'not_included_in_offer_in_print' => $request->has('not_included_in_offer_in_print') ? (bool) $request->not_included_in_offer_in_print : true,
+                'not_included_in_offer' => Contract::notIncludedInOfferPayloadFromRequest($request, 'not_included_in_offer'),
+            ]));
 
             // Calculate total amount and prepare machine details for storage
             $totalAmount = 0;

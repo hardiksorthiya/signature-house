@@ -791,7 +791,8 @@
                             </div>
                         </div>
 
-                        <!-- Other Buyer Expenses Details Section -->
+                        <!-- Other Buyer Expenses Details Section (toggle via SHOW_OTHER_BUYER_EXPENSES_SECTION in .env) -->
+                        @if(\App\Models\Contract::showOtherBuyerExpensesSection())
                         @php $editShowBuyerExp = filter_var(old('other_buyer_expenses_in_print', $contract->other_buyer_expenses_in_print), FILTER_VALIDATE_BOOLEAN); @endphp
                         <div class="row mb-4">
                             <div class="col-12">
@@ -921,6 +922,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
                         <!-- Other Details Section -->
                         @php $editShowOtherDet = filter_var(old('other_details_in_print', $contract->other_details_in_print), FILTER_VALIDATE_BOOLEAN); @endphp
@@ -1004,6 +1006,13 @@
                             </div>
                         </div>
 
+                        @include('contracts.partials.not-included-in-offer-section', [
+                            'nioFieldPrefix' => 'not_included_in_offer',
+                            'nioPrintField' => 'not_included_in_offer_in_print',
+                            'nioShowPrint' => filter_var(old('not_included_in_offer_in_print', $contract->not_included_in_offer_in_print ?? true), FILTER_VALIDATE_BOOLEAN),
+                            'nioFlags' => \App\Models\Contract::mergeNotIncludedInOfferFlags(old('not_included_in_offer'), $contract->not_included_in_offer),
+                        ])
+
                         <!-- Difference of Specification Section -->
                         @php $editShowSpecMain = filter_var(old('difference_specification_in_print', $contract->difference_specification_in_print), FILTER_VALIDATE_BOOLEAN); @endphp
                         <div class="row mb-4">
@@ -1013,8 +1022,7 @@
                                     x-data="{ showFields: {{ $editShowSpecMain ? 'true' : 'false' }} }">
                                     <div class="card-body p-4">
                                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of
-                                                Specification</h5>
+                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification (Rapier - Jacquard)</h5>
                                             <div class="d-flex align-items-center flex-wrap gap-2">
                                                 <label class="form-label fw-medium mb-0"
                                                     style="color: #374151;">In Print :</label>
@@ -1107,7 +1115,7 @@
                             </div>
                         </div>
 
-                        <!-- Difference of Specification (Additional) -->
+                        <!-- Difference of Specification (Airjet) -->
                         @php $editShowSpecExt = filter_var(old('difference_specification_extended_in_print', $contract->difference_specification_extended_in_print ?? false), FILTER_VALIDATE_BOOLEAN); @endphp
                         <div class="row mb-4">
                             <div class="col-12">
@@ -1116,7 +1124,7 @@
                                     x-data="{ showFields: {{ $editShowSpecExt ? 'true' : 'false' }} }">
                                     <div class="card-body p-4">
                                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification (Additional)</h5>
+                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification (Airjet)</h5>
                                             <div class="d-flex align-items-center flex-wrap gap-2">
                                                 <label class="form-label fw-medium mb-0" style="color: #374151;">In Print :</label>
                                                 <div class="btn-group" role="group">
@@ -1144,7 +1152,7 @@
                             </div>
                         </div>
 
-                        <!-- Difference of Specification 3 -->
+                        <!-- Difference of Specification (Waterjet) -->
                         @php $editShowSpec3 = filter_var(old('difference_specification_3_in_print', $contract->difference_specification_3_in_print ?? false), FILTER_VALIDATE_BOOLEAN); @endphp
                         <div class="row mb-4">
                             <div class="col-12">
@@ -1153,7 +1161,7 @@
                                     x-data="{ showFields: {{ $editShowSpec3 ? 'true' : 'false' }} }">
                                     <div class="card-body p-4">
                                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification 3</h5>
+                                            <h5 class="fw-semibold mb-0" style="color: #1f2937;">Difference of Specification (Waterjet)</h5>
                                             <div class="d-flex align-items-center flex-wrap gap-2">
                                                 <label class="form-label fw-medium mb-0" style="color: #374151;">In Print :</label>
                                                 <div class="btn-group" role="group">

@@ -172,7 +172,7 @@ class ContractController extends Controller
 
         try {
             return DB::transaction(function () use ($request) {
-                $contract = Contract::create([
+                $contract = Contract::create(array_merge([
                     'lead_id' => null,
                     'created_by' => auth()->id(),
                     'business_firm_id' => $request->business_firm_id,
@@ -188,18 +188,7 @@ class ContractController extends Controller
                     'phone_number_2' => $request->phone_number_2,
                     'gst' => $request->gst,
                     'pan' => $request->pan,
-                    'overseas_freight' => $request->overseas_freight,
-                    'demurrage_detention_cfs_charges' => $request->demurrage_detention_cfs_charges,
-                    'air_pipe_connection' => $request->air_pipe_connection,
-                    'custom_duty' => $request->custom_duty,
-                    'port_expenses_transport' => $request->port_expenses_transport,
-                    'crane_foundation' => $request->crane_foundation,
-                    'humidification' => $request->humidification,
-                    'damage' => $request->damage,
-                    'gst_custom_charges' => $request->gst_custom_charges,
-                    'compressor' => $request->compressor,
-                    'optional_spares' => $request->optional_spares,
-                    'other_buyer_expenses_in_print' => $request->has('other_buyer_expenses_in_print') ? (bool)$request->other_buyer_expenses_in_print : true,
+                ], Contract::otherBuyerExpensesForStore($request), [
                     'payment_terms' => $request->payment_terms,
                     'quote_validity' => $request->quote_validity,
                     'loading_terms' => $request->loading_terms,
@@ -248,7 +237,9 @@ class ContractController extends Controller
                     'terms_cancellation_order' => $request->terms_cancellation_order,
                     'terms_jurisdiction_seller_rights' => $request->terms_jurisdiction_seller_rights,
                     'terms_conditions_in_print' => $request->boolean('terms_conditions_in_print', true),
-                ]);
+                    'not_included_in_offer_in_print' => $request->has('not_included_in_offer_in_print') ? (bool) $request->not_included_in_offer_in_print : true,
+                    'not_included_in_offer' => Contract::notIncludedInOfferPayloadFromRequest($request, 'not_included_in_offer'),
+                ]));
 
                 $totalAmount = 0;
                 $machineDetails = [];
@@ -674,7 +665,7 @@ class ContractController extends Controller
             ]);
         }
 
-        $contract->update([
+        $contract->update(array_merge([
             // Personal Information
             'business_firm_id' => $request->business_firm_id,
             'buyer_name' => $request->buyer_name,
@@ -689,19 +680,7 @@ class ContractController extends Controller
             'gst' => $request->gst,
             'pan' => $request->pan,
             'token_amount' => $request->token_amount ?? null,
-            // Other Buyer Expenses Details
-            'overseas_freight' => $request->overseas_freight,
-            'demurrage_detention_cfs_charges' => $request->demurrage_detention_cfs_charges,
-            'air_pipe_connection' => $request->air_pipe_connection,
-            'custom_duty' => $request->custom_duty,
-            'port_expenses_transport' => $request->port_expenses_transport,
-            'crane_foundation' => $request->crane_foundation,
-            'humidification' => $request->humidification,
-            'damage' => $request->damage,
-            'gst_custom_charges' => $request->gst_custom_charges,
-            'compressor' => $request->compressor,
-            'optional_spares' => $request->optional_spares,
-            'other_buyer_expenses_in_print' => $request->has('other_buyer_expenses_in_print') ? (bool)$request->other_buyer_expenses_in_print : $contract->other_buyer_expenses_in_print,
+        ], Contract::otherBuyerExpensesForUpdate($request, $contract), [
             // Other Details
             'payment_terms' => $request->payment_terms,
             'quote_validity' => $request->quote_validity,
@@ -752,12 +731,14 @@ class ContractController extends Controller
             'terms_cancellation_order' => $request->terms_cancellation_order,
             'terms_jurisdiction_seller_rights' => $request->terms_jurisdiction_seller_rights,
             'terms_conditions_in_print' => $request->boolean('terms_conditions_in_print', (bool) $contract->terms_conditions_in_print),
+            'not_included_in_offer_in_print' => $request->has('not_included_in_offer_in_print') ? (bool) $request->not_included_in_offer_in_print : (bool) ($contract->not_included_in_offer_in_print ?? true),
+            'not_included_in_offer' => Contract::notIncludedInOfferPayloadFromRequest($request, 'not_included_in_offer'),
             // Reset approval status - contract needs to be re-approved after update
             'approval_status' => 'pending',
             'approved_by' => null,
             'approved_at' => null,
             'approval_notes' => null,
-        ]);
+        ]));
 
         return redirect()->route('contracts.index')
             ->with('success', 'Contract details updated successfully. Contract has been sent for approval again.');

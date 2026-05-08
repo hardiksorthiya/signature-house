@@ -4,39 +4,39 @@
             <div class="card border-0 shadow-sm mb-4" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px;">
                 <div class="card-body p-4">
                     <h3 class="h6 fw-semibold mb-3" style="color: #1f2937;">Quick Actions</h3>
-                    <div class="row g-2">
+                    <div class="row g-2 g-sm-3 quick-actions-row">
                         @can('create leads')
-                            <div class="col-6">
+                            <div class="col-12 col-sm-6">
                                 <a href="{{ route('leads.create') }}" class="btn btn-primary quick-action-btn w-100">
-                                    <i class="fas fa-user-plus me-2"></i>Create New Lead
+                                    <i class="fas fa-user-plus quick-action-icon"></i><span class="quick-action-label">Create New Lead</span>
                                 </a>
                             </div>
                         @endcan
                         @canany(['convert contract', 'view contract approvals'])
-                            <div class="col-6">
+                            <div class="col-12 col-sm-6">
                                 <a href="{{ route('contracts.create') }}" class="btn btn-outline-primary quick-action-btn w-100">
-                                    <i class="fas fa-file-contract me-2"></i>Create New Contract
+                                    <i class="fas fa-file-contract quick-action-icon"></i><span class="quick-action-label">Create New Contract</span>
                                 </a>
                             </div>
                         @endcanany
                         @can('create proforma invoices')
-                            <div class="col-6">
+                            <div class="col-12 col-sm-6">
                                 <a href="{{ route('proforma-invoices.create') }}" class="btn btn-success quick-action-btn w-100">
-                                    <i class="fas fa-file-invoice me-2"></i>Create Proforma Invoice
+                                    <i class="fas fa-file-invoice quick-action-icon"></i><span class="quick-action-label">Create Proforma Invoice</span>
                                 </a>
                             </div>
                         @endcan
                         @canany(['view proforma invoices', 'view contract approvals'])
-                            <div class="col-6">
+                            <div class="col-12 col-sm-6">
                                 <a href="{{ route('purchase-orders.create') }}" class="btn btn-outline-success quick-action-btn w-100">
-                                    <i class="fas fa-file-signature me-2"></i>Create New Purchase Order
+                                    <i class="fas fa-file-signature quick-action-icon"></i><span class="quick-action-label">Create New Purchase Order</span>
                                 </a>
                             </div>
                         @endcanany
                         @can('edit proforma invoices')
-                            <div class="col-6">
+                            <div class="col-12 col-sm-6">
                                 <a href="{{ route('proforma-invoices.delivery-details-index') }}" class="btn btn-outline-info quick-action-btn w-100">
-                                    <i class="fas fa-truck-loading me-2"></i>Add Detail In PI
+                                    <i class="fas fa-truck-loading quick-action-icon"></i><span class="quick-action-label">Add Detail In PI</span>
                                 </a>
                             </div>
                         @endcan
@@ -459,16 +459,36 @@
    
 
     <style>
-        .quick-action-btn {
-            min-height: 56px;
-            padding: 0.75rem 0.75rem;
-            font-size: 0.95rem;
+        /* Quick Actions: full-width stack on mobile; 2-col from sm; wrap text (no overlap) */
+        .quick-actions-row .quick-action-btn {
+            min-height: 52px;
+            padding: 0.65rem 0.75rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            display: inline-flex;
+            display: flex;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
+            gap: 0.5rem;
             border-radius: 10px;
-            white-space: nowrap;
+            white-space: normal;
+            text-align: center;
+            line-height: 1.25;
+            word-break: break-word;
+            hyphens: auto;
+        }
+        .quick-actions-row .quick-action-icon {
+            flex-shrink: 0;
+        }
+        .quick-actions-row .quick-action-label {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        @media (min-width: 576px) {
+            .quick-actions-row .quick-action-btn {
+                min-height: 56px;
+                font-size: 0.95rem;
+            }
         }
 
         .dashboard-chart-wrap {

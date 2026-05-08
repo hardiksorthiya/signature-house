@@ -89,6 +89,8 @@ class Contract extends Model
         'terms_cancellation_order',
         'terms_jurisdiction_seller_rights',
         'terms_conditions_in_print',
+        'not_included_in_offer_in_print',
+        'not_included_in_offer',
         'customer_signature',
         'approval_status',
         'approved_by',
@@ -106,8 +108,160 @@ class Contract extends Model
         'difference_specification_extended_in_print' => 'boolean',
         'difference_specification_3_in_print' => 'boolean',
         'terms_conditions_in_print' => 'boolean',
+        'not_included_in_offer_in_print' => 'boolean',
+        'not_included_in_offer' => 'array',
         'approved_at' => 'datetime',
     ];
+
+    /**
+     * Merge stored JSON with defaults (all items default to checked / true).
+     * Used for forms (old input) and display.
+     *
+     * @param  array<string, mixed>|null  $oldInput  Request old() array for not_included_in_offer.* keys
+     * @param  array<string, mixed>|null  $storedJson  DB JSON column
+     * @return array<string, bool>
+     */
+    public static function mergeNotIncludedInOfferFlags(?array $oldInput, $storedJson): array
+    {
+        $items = config('not_included_in_offer.items', []);
+        $stored = is_array($storedJson) ? $storedJson : [];
+        $out = [];
+        foreach (array_keys($items) as $key) {
+            if (is_array($oldInput) && array_key_exists($key, $oldInput)) {
+                $out[$key] = filter_var($oldInput[$key], FILTER_VALIDATE_BOOLEAN);
+            } elseif (array_key_exists($key, $stored)) {
+                $out[$key] = (bool) $stored[$key];
+            } else {
+                $out[$key] = true;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    public static function notIncludedInOfferPayloadFromRequest(\Illuminate\Http\Request $request, string $prefix): array
+    {
+        $out = [];
+        foreach (array_keys(config('not_included_in_offer.items', [])) as $key) {
+            $out[$key] = $request->boolean($prefix.'.'.$key);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Checked item labels for PDF when section is set to Show.
+     *
+     * @return list<string>
+     */
+    public function notIncludedInOfferPdfLabels(): array
+    {
+        if (! $this->contractPrintFlag('not_included_in_offer_in_print', true)) {
+            return [];
+        }
+        $labels = [];
+        $flags = self::mergeNotIncludedInOfferFlags(null, $this->not_included_in_offer);
+        foreach (config('not_included_in_offer.items', []) as $key => $label) {
+            if (! empty($flags[$key])) {
+                $labels[] = $label;
+            }
+        }
+
+        return $labels;
+    }
+
+    /**
+     * Feature flag: show "Other Buyer Expenses Details" in forms, contract show, and PDF.
+     */
+    public static function showOtherBuyerExpensesSection(): bool
+    {
+        return (bool) config('contract.show_other_buyer_expenses_section', false);
+    }
+
+    /**
+     * Values to persist when creating a contract (request vs global defaults when section hidden).
+     *
+     * @return array<string, mixed>
+     */
+    public static function otherBuyerExpensesForStore(\Illuminate\Http\Request $request): array
+    {
+        if (self::showOtherBuyerExpensesSection()) {
+            return [
+                'overseas_freight' => $request->overseas_freight,
+                'demurrage_detention_cfs_charges' => $request->demurrage_detention_cfs_charges,
+                'air_pipe_connection' => $request->air_pipe_connection,
+                'custom_duty' => $request->custom_duty,
+                'port_expenses_transport' => $request->port_expenses_transport,
+                'crane_foundation' => $request->crane_foundation,
+                'humidification' => $request->humidification,
+                'damage' => $request->damage,
+                'gst_custom_charges' => $request->gst_custom_charges,
+                'compressor' => $request->compressor,
+                'optional_spares' => $request->optional_spares,
+                'other_buyer_expenses_in_print' => $request->has('other_buyer_expenses_in_print') ? (bool) $request->other_buyer_expenses_in_print : true,
+            ];
+        }
+
+        $g = Setting::firstOrCreate(['id' => 1]);
+
+        return [
+            'overseas_freight' => $g->global_overseas_freight,
+            'demurrage_detention_cfs_charges' => $g->global_demurrage_detention_cfs_charges,
+            'air_pipe_connection' => $g->global_air_pipe_connection,
+            'custom_duty' => $g->global_custom_duty,
+            'port_expenses_transport' => $g->global_port_expenses_transport,
+            'crane_foundation' => $g->global_crane_foundation,
+            'humidification' => $g->global_humidification,
+            'damage' => $g->global_damage,
+            'gst_custom_charges' => $g->global_gst_custom_charges,
+            'compressor' => $g->global_compressor,
+            'optional_spares' => $g->global_optional_spares,
+            'other_buyer_expenses_in_print' => (bool) ($g->global_other_buyer_expenses_in_print ?? true),
+        ];
+    }
+
+    /**
+     * Values to persist when updating a contract (request vs keep existing when section hidden).
+     *
+     * @return array<string, mixed>
+     */
+    public static function otherBuyerExpensesForUpdate(\Illuminate\Http\Request $request, self $contract): array
+    {
+        if (self::showOtherBuyerExpensesSection()) {
+            return [
+                'overseas_freight' => $request->overseas_freight,
+                'demurrage_detention_cfs_charges' => $request->demurrage_detention_cfs_charges,
+                'air_pipe_connection' => $request->air_pipe_connection,
+                'custom_duty' => $request->custom_duty,
+                'port_expenses_transport' => $request->port_expenses_transport,
+                'crane_foundation' => $request->crane_foundation,
+                'humidification' => $request->humidification,
+                'damage' => $request->damage,
+                'gst_custom_charges' => $request->gst_custom_charges,
+                'compressor' => $request->compressor,
+                'optional_spares' => $request->optional_spares,
+                'other_buyer_expenses_in_print' => $request->has('other_buyer_expenses_in_print') ? (bool) $request->other_buyer_expenses_in_print : $contract->other_buyer_expenses_in_print,
+            ];
+        }
+
+        return [
+            'overseas_freight' => $contract->overseas_freight,
+            'demurrage_detention_cfs_charges' => $contract->demurrage_detention_cfs_charges,
+            'air_pipe_connection' => $contract->air_pipe_connection,
+            'custom_duty' => $contract->custom_duty,
+            'port_expenses_transport' => $contract->port_expenses_transport,
+            'crane_foundation' => $contract->crane_foundation,
+            'humidification' => $contract->humidification,
+            'damage' => $contract->damage,
+            'gst_custom_charges' => $contract->gst_custom_charges,
+            'compressor' => $contract->compressor,
+            'optional_spares' => $contract->optional_spares,
+            'other_buyer_expenses_in_print' => (bool) ($contract->other_buyer_expenses_in_print ?? true),
+        ];
+    }
 
     public function lead()
     {
@@ -328,6 +482,9 @@ class Contract extends Model
      */
     public function otherBuyerExpensesPdfRows(): array
     {
+        if (! self::showOtherBuyerExpensesSection()) {
+            return [];
+        }
         if (! $this->contractPrintFlag('other_buyer_expenses_in_print', true)) {
             return [];
         }

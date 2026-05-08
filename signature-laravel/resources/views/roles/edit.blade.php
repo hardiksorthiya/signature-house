@@ -100,6 +100,7 @@
                                     'Purchase Order' => ['view purchase order', 'create purchase order', 'edit purchase order', 'delete purchase order'],
                                     'Inventory' => ['view inventory', 'create inventory', 'edit inventory', 'delete inventory'],
                                     'Task' => ['view task', 'create task', 'edit task', 'delete task'],
+                                    'Old Data' => ['view old data', 'create old data', 'edit old data', 'delete old data'],
                                     'Complain' => ['view complain', 'create complain', 'edit complain', 'delete complain'],
                                     'Reports' => ['view reports', 'export reports'],
                                     'Settings' => ['view settings', 'edit settings'],
