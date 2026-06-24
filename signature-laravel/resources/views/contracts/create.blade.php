@@ -20,7 +20,7 @@
                         <h2 class="h5 fw-semibold mb-0" style="color: #1f2937;">Contract Information</h2>
                     </div>
 
-                    <form action="{{ route('contracts.store') }}" method="POST" id="contractForm">
+                    <form action="{{ route('contracts.store') }}" method="POST" id="contractForm" @submit="prepareContractSubmit($event)">
                         @csrf
                         @if($errors->has('error'))
                             <div class="alert alert-danger mb-3" role="alert">{{ $errors->first('error') }}</div>
@@ -177,7 +177,7 @@
                             </div>
 
                             <div id="machines-container">
-                                <template x-for="(machine, index) in machines" :key="index">
+                                <div x-for="(machine, index) in machines" :key="index">
                                     <div class="card mb-3" style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -201,7 +201,7 @@
                                                     <div class="col-md-4">
                                                         <label class="form-label fw-medium" style="color: #374151;">Brand</label>
                                                         <select :name="`machines[${index}][brand_id]`" x-model="machine.brand_id" @change="loadMachineModels(index, $event.target.value)" :id="`brand_${index}`" class="form-select" style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                                            <template x-for="brand in (machine.categoryItems?.brands || [])" :key="brand.id">
+                                                            <template x-for="brand in (machine.categoryItems && machine.categoryItems.brands ? machine.categoryItems.brands : [])" :key="brand.id">
                                                                 <option :value="String(brand.id)" x-text="brand.name"></option>
                                                             </template>
                                                         </select>
@@ -212,7 +212,7 @@
                                                     <div class="col-md-4">
                                                         <label class="form-label fw-medium" style="color: #374151;">Machine Seller</label>
                                                         <select :name="`machines[${index}][seller_id]`" x-model="machine.seller_id" :id="`seller_${index}`" class="form-select" style="border-radius: 8px; border: 1px solid #e5e7eb;">
-                                                            <template x-for="seller in (machine.categoryItems?.sellers || [])" :key="seller.id">
+                                                            <template x-for="seller in (machine.categoryItems && machine.categoryItems.sellers ? machine.categoryItems.sellers : [])" :key="seller.id">
                                                                 <option :value="String(seller.id)" x-text="seller.seller_name"></option>
                                                             </template>
                                                         </select>
@@ -453,7 +453,7 @@
                                             
                                         </div>
                                     </div>
-                                </template>
+                                </div>
                             </div>
 
                             <div class="d-flex justify-content-end mt-3 pt-3 border-top">
@@ -848,6 +848,8 @@
         </div>
     </div>
 
+    @include('contracts.partials.machine-form-sync')
+
     <script>
         function contractForm() {
             return {
@@ -988,7 +990,7 @@
                         return;
                     }
                     try {
-                        const categoryId = this.machines[index]?.machine_category_id;
+                        const categoryId = this.machines[index] && this.machines[index].machine_category_id;
                         const query = categoryId ? `?category_id=${encodeURIComponent(String(categoryId))}` : '';
                         const response = await fetch(`{{ url('leads/machine-models') }}/${brandId}${query}`);
                         const models = await response.json();
@@ -1108,6 +1110,10 @@
                     } catch (error) {
                         console.error('Error loading category items:', error);
                     }
+                },
+
+                prepareContractSubmit(event) {
+                    syncContractMachineFields(event.target, this.machines);
                 }
             }
         }

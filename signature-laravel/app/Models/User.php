@@ -101,4 +101,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserLocation::class)->latestOfMany('recorded_at');
     }
+
+    public function complaintAreas()
+    {
+        return $this->belongsToMany(Area::class, 'user_complaint_areas', 'user_id', 'area_id');
+    }
 }

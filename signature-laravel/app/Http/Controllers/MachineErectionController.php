@@ -5,12 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Contract;
 use App\Models\ProformaInvoice;
 use App\Models\MachineErectionDetail;
+use App\Models\MachineErectionMachineSummary;
+use App\Support\MsUnloadingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class MachineErectionController extends Controller
 {
+    public const POINT_MACHINE_ERECTION_INSTALLATION = 'Machine Erection & Installation Completed';
+
+    public const POINT_CERTIFICATE_RECEIVED = 'Certificate Received';
+
+    public const CHECKLIST_POINT_COUNT = 33;
     /**
      * Display machine erection index page (list all PIs - with or without machine erection details)
      */
@@ -18,6 +25,8 @@ class MachineErectionController extends Controller
     {
         $query = ProformaInvoice::with(['machineErectionDetails', 'contract.creator', 'creator', 'seller', 'proformaInvoiceMachines.machineCategory'])
             ->orderBy('created_at', 'desc');
+
+        MsUnloadingAssignment::applyVisibleScope($query);
 
         if ($request->filled('pi_number')) {
             $query->where('proforma_invoice_number', trim($request->pi_number));
@@ -64,6 +73,8 @@ class MachineErectionController extends Controller
         $piQuery = ProformaInvoice::query()
             ->with(['contract.creator', 'creator'])
             ->orderByDesc('created_at');
+
+        MsUnloadingAssignment::applyVisibleScope($piQuery);
 
         if ($like !== null) {
             $piQuery->where(function ($w) use ($like) {
@@ -136,7 +147,15 @@ class MachineErectionController extends Controller
      */
     public function show(ProformaInvoice $proformaInvoice)
     {
-        $proformaInvoice->load(['machineErectionDetails.machineCategory', 'proformaInvoiceMachines.machineCategory']);
+        if (! MsUnloadingAssignment::userCanAccessPi($proformaInvoice)) {
+            abort(403, 'You are not assigned to this MS Unloading job.');
+        }
+
+        $proformaInvoice->load([
+            'machineErectionDetails.machineCategory',
+            'machineErectionMachineSummaries',
+            'proformaInvoiceMachines.machineCategory',
+        ]);
         
         // Get unique machine categories from PI machines with quantities
         $machineCategoriesWithQuantity = $proformaInvoice->proformaInvoiceMachines()
@@ -203,7 +222,21 @@ class MachineErectionController extends Controller
             return $detail->machine_category_id . '_' . $detail->point_to_follow;
         });
 
-        return view('machine-erection.show', compact('proformaInvoice', 'machineCategories', 'machineCategoriesWithQuantity', 'defaultPointsToFollow', 'existingDetails'));
+        $machineSummariesByCategory = $proformaInvoice->machineErectionMachineSummaries
+            ->groupBy('machine_category_id')
+            ->map(fn ($rows) => $rows->keyBy('machine_number'));
+
+        return view('machine-erection.show', compact(
+            'proformaInvoice',
+            'machineCategories',
+            'machineCategoriesWithQuantity',
+            'defaultPointsToFollow',
+            'existingDetails',
+            'machineSummariesByCategory'
+        ))->with([
+            'pointMachineErectionLabel' => self::POINT_MACHINE_ERECTION_INSTALLATION,
+            'pointCertificateLabel' => self::POINT_CERTIFICATE_RECEIVED,
+        ]);
     }
 
     /**
@@ -211,7 +244,14 @@ class MachineErectionController extends Controller
      */
     public function store(Request $request, ProformaInvoice $proformaInvoice)
     {
+        MsUnloadingAssignment::ensureCanAccessPi($proformaInvoice);
+
         $request->validate([
+            'machine_erection_machines' => 'nullable|array',
+            'machine_erection_machines.*' => 'nullable|array',
+            'machine_erection_machines.*.*.machine_erection_date' => 'nullable|string|regex:/^(\d{1,2}-\d{1,2}(-\d{4})?)?$/',
+            'machine_erection_machines.*.*.installation_completed_date' => 'nullable|string|regex:/^(\d{1,2}-\d{1,2}(-\d{4})?)?$/',
+            'machine_erection_machines.*.*.certificate_received' => 'nullable|in:yes,no',
             'machine_erection_details' => 'nullable|array',
             'machine_erection_details.*' => 'nullable|array',
             'machine_erection_details.*.*.machine_category_id' => 'nullable|exists:machine_categories,id',
@@ -223,59 +263,70 @@ class MachineErectionController extends Controller
         try {
             DB::beginTransaction();
 
-            // Delete existing details for this PI
+            MachineErectionMachineSummary::where('proforma_invoice_id', $proformaInvoice->id)->delete();
             MachineErectionDetail::where('proforma_invoice_id', $proformaInvoice->id)->delete();
 
-            // Save new details (if any provided)
+            if ($request->has('machine_erection_machines') && is_array($request->machine_erection_machines)) {
+                foreach ($request->machine_erection_machines as $categoryId => $machines) {
+                    if (! is_array($machines)) {
+                        continue;
+                    }
+                    foreach ($machines as $machineNumber => $row) {
+                        $erectionDate = $this->parseErectionDate($row['machine_erection_date'] ?? null);
+                        $installationDate = $this->parseErectionDate($row['installation_completed_date'] ?? null);
+                        $certificate = $this->parseCertificateReceived($row['certificate_received'] ?? null);
+
+                        if ($erectionDate || $installationDate || $certificate !== null) {
+                            MachineErectionMachineSummary::create([
+                                'proforma_invoice_id' => $proformaInvoice->id,
+                                'machine_category_id' => (int) $categoryId,
+                                'machine_number' => (int) $machineNumber,
+                                'machine_erection_date' => $erectionDate,
+                                'installation_completed_date' => $installationDate,
+                                'certificate_received' => $certificate,
+                            ]);
+                        }
+                    }
+                }
+            }
+
             $sortOrder = 0;
             if ($request->has('machine_erection_details') && is_array($request->machine_erection_details)) {
                 foreach ($request->machine_erection_details as $categoryId => $categoryPoints) {
-                    if (is_array($categoryPoints)) {
-                        foreach ($categoryPoints as $pointIndex => $pointData) {
-                            if (!empty($pointData['point_to_follow']) && !empty($pointData['machine_category_id'])) {
-                                $pointToFollow = $pointData['point_to_follow'];
-                                $machineCategoryId = $pointData['machine_category_id'];
-                                
-                                // Save dates for each machine (1-10)
-                                if (isset($pointData['machine_dates']) && is_array($pointData['machine_dates'])) {
-                                    foreach ($pointData['machine_dates'] as $machineNumber => $date) {
-                                        if (!empty($date)) {
-                                            // Parse date format dd-mm to yyyy-mm-dd (assume current year if year not provided)
-                                            $parsedDate = null;
-                                            if ($date) {
-                                                $dateParts = explode('-', $date);
-                                                if (count($dateParts) === 2) {
-                                                    // Only day and month provided, use current year
-                                                    $parsedDate = date('Y') . '-' . $dateParts[1] . '-' . $dateParts[0];
-                                                } elseif (count($dateParts) === 3) {
-                                                    // Full date provided
-                                                    $parsedDate = $dateParts[2] . '-' . $dateParts[1] . '-' . $dateParts[0];
-                                                } else {
-                                                    $parsedDate = $date;
-                                                }
-                                            }
-                                            
-                                            MachineErectionDetail::create([
-                                                'proforma_invoice_id' => $proformaInvoice->id,
-                                                'machine_category_id' => $machineCategoryId,
-                                                'point_to_follow' => $pointToFollow,
-                                                'machine_number' => (int)$machineNumber,
-                                                'date' => $parsedDate,
-                                                'sort_order' => $sortOrder,
-                                            ]);
-                                        }
-                                    }
+                    if (! is_array($categoryPoints)) {
+                        continue;
+                    }
+                    foreach ($categoryPoints as $pointData) {
+                        if (empty($pointData['point_to_follow']) || empty($pointData['machine_category_id'])) {
+                            continue;
+                        }
+
+                        $pointToFollow = $pointData['point_to_follow'];
+                        $machineCategoryId = $pointData['machine_category_id'];
+
+                        if (isset($pointData['machine_dates']) && is_array($pointData['machine_dates'])) {
+                            foreach ($pointData['machine_dates'] as $machineNumber => $date) {
+                                $parsedDate = $this->parseErectionDate($date);
+                                if ($parsedDate) {
+                                    MachineErectionDetail::create([
+                                        'proforma_invoice_id' => $proformaInvoice->id,
+                                        'machine_category_id' => $machineCategoryId,
+                                        'point_to_follow' => $pointToFollow,
+                                        'machine_number' => (int) $machineNumber,
+                                        'date' => $parsedDate,
+                                        'sort_order' => $sortOrder,
+                                    ]);
                                 }
-                                $sortOrder++;
                             }
                         }
+                        $sortOrder++;
                     }
                 }
             }
 
             DB::commit();
 
-            return redirect()->route('machine-erection.index')
+            return redirect()->route('machine-erection.show', $proformaInvoice)
                 ->with('success', 'Machine erection details saved successfully.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
@@ -289,6 +340,39 @@ class MachineErectionController extends Controller
         }
     }
 
+    protected function parseCertificateReceived(?string $value): ?bool
+    {
+        $value = strtolower(trim((string) $value));
+
+        if ($value === 'yes') {
+            return true;
+        }
+
+        if ($value === 'no') {
+            return false;
+        }
+
+        return null;
+    }
+
+    protected function parseErectionDate(?string $date): ?string
+    {
+        $date = trim((string) $date);
+        if ($date === '') {
+            return null;
+        }
+
+        $dateParts = explode('-', $date);
+        if (count($dateParts) === 2) {
+            return date('Y') . '-' . $dateParts[1] . '-' . $dateParts[0];
+        }
+        if (count($dateParts) === 3) {
+            return $dateParts[2] . '-' . $dateParts[1] . '-' . $dateParts[0];
+        }
+
+        return $date;
+    }
+
     /**
      * Get PIs by Sales Manager (AJAX)
      */
@@ -296,16 +380,19 @@ class MachineErectionController extends Controller
     {
         $salesManagerId = $request->get('sales_manager_id');
         
-        $pis = ProformaInvoice::where(function($q) use ($salesManagerId) {
+        $query = ProformaInvoice::query()->where(function ($q) use ($salesManagerId) {
             $q->where('created_by', $salesManagerId)
-              ->orWhereHas('contract', function($subQ) use ($salesManagerId) {
-                  $subQ->where('created_by', $salesManagerId);
-              });
-        })
-        ->orderBy('proforma_invoice_number')
-        ->get(['id', 'proforma_invoice_number', 'buyer_company_name']);
+                ->orWhereHas('contract', function ($subQ) use ($salesManagerId) {
+                    $subQ->where('created_by', $salesManagerId);
+                });
+        });
 
-        return response()->json($pis);
+        MsUnloadingAssignment::applyVisibleScope($query);
+
+        return response()->json(
+            $query->orderBy('proforma_invoice_number')
+                ->get(['id', 'proforma_invoice_number', 'buyer_company_name'])
+        );
     }
 
     /**

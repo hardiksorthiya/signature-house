@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Contract;
 use App\Models\ProformaInvoice;
 use App\Models\PreErectionDetail;
+use App\Support\MsUnloadingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -39,6 +40,8 @@ class PreErectionController extends Controller
     {
         $query = ProformaInvoice::with(['preErectionDetails', 'contract.creator', 'creator', 'seller'])
             ->orderBy('created_at', 'desc');
+
+        MsUnloadingAssignment::applyVisibleScope($query);
 
         if ($request->filled('pi_number')) {
             $query->where('proforma_invoice_number', trim($request->pi_number));
@@ -87,6 +90,8 @@ class PreErectionController extends Controller
         $piQuery = ProformaInvoice::query()
             ->with(['contract.creator', 'creator'])
             ->orderByDesc('created_at');
+
+        MsUnloadingAssignment::applyVisibleScope($piQuery);
 
         if ($like !== null) {
             $piQuery->where(function ($w) use ($like) {
@@ -159,6 +164,10 @@ class PreErectionController extends Controller
      */
     public function show(ProformaInvoice $proformaInvoice)
     {
+        if (! MsUnloadingAssignment::userCanAccessPi($proformaInvoice)) {
+            abort(403, 'You are not assigned to this MS Unloading job.');
+        }
+
         $proformaInvoice->load('preErectionDetails');
 
         $technicalSpecifications = self::technicalSpecificationsList();
@@ -174,6 +183,8 @@ class PreErectionController extends Controller
      */
     public function store(Request $request, ProformaInvoice $proformaInvoice)
     {
+        MsUnloadingAssignment::ensureCanAccessPi($proformaInvoice);
+
         $request->validate([
             'pre_erection_details' => 'required|array',
             'pre_erection_details.*.technical_specification' => 'required|string|max:255',
@@ -247,16 +258,19 @@ class PreErectionController extends Controller
     {
         $salesManagerId = $request->get('sales_manager_id');
         
-        $pis = ProformaInvoice::where(function($q) use ($salesManagerId) {
+        $query = ProformaInvoice::query()->where(function ($q) use ($salesManagerId) {
             $q->where('created_by', $salesManagerId)
-              ->orWhereHas('contract', function($subQ) use ($salesManagerId) {
-                  $subQ->where('created_by', $salesManagerId);
-              });
-        })
-        ->orderBy('proforma_invoice_number')
-        ->get(['id', 'proforma_invoice_number', 'buyer_company_name']);
+                ->orWhereHas('contract', function ($subQ) use ($salesManagerId) {
+                    $subQ->where('created_by', $salesManagerId);
+                });
+        });
 
-        return response()->json($pis);
+        MsUnloadingAssignment::applyVisibleScope($query);
+
+        return response()->json(
+            $query->orderBy('proforma_invoice_number')
+                ->get(['id', 'proforma_invoice_number', 'buyer_company_name'])
+        );
     }
 
     /**

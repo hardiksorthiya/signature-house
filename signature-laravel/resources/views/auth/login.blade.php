@@ -76,4 +76,10 @@
             </button>
         </div>
     </form>
+
+    <div class="mt-4 pt-3 text-center border-top" style="border-color: #e5e7eb !important;">
+        <a href="{{ route('mobile-app.index') }}" class="small fw-semibold text-decoration-none" style="color: var(--login-primary);">
+            <i class="fas fa-mobile-alt me-1"></i>Install mobile app (Android &amp; iOS)
+        </a>
+    </div>
 </x-guest-layout>

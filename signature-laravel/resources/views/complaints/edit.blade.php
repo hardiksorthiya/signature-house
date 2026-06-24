@@ -1,10 +1,16 @@
+@php
+    $fromFeedback = request('from') === 'feedback';
+    $backUrl = $fromFeedback
+        ? route('complaints.show', [$complaint, 'from' => 'feedback'])
+        : route('complaints.show', $complaint);
+@endphp
 <x-app-layout>
     <div class="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-2">
         <div>
             <h1 class="h2 fw-semibold mb-1" style="color: #1f2937;">Edit Complain</h1>
             <p class="text-muted mb-0">Update complaint #{{ $complaint->id }}</p>
         </div>
-        <a href="{{ route('complaints.index') }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back to List</a>
+        <a href="{{ $backUrl }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i>Back</a>
     </div>
 
     @if ($errors->any())

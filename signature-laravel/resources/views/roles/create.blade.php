@@ -44,7 +44,7 @@
     </div>
 
     <!-- Split Layout: 70% Form, 30% Role List -->
-    <div class="row g-4">
+    <div class="row g-4 align-items-start">
         <!-- Left Side: Role Form with Permissions (70%) -->
         <div class="col-xl-6 col-lg-12 col-md-12">
             <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%);">
@@ -220,7 +220,7 @@
 
         <!-- Right Side: Role List (30%) -->
         <div class="col-xl-6 col-lg-12 col-md-12 list-card-col" style="min-width: 0;">
-            <div class="card shadow-sm border-0 h-100 list-card" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px; min-width: 0;">
+            <div class="card shadow-sm border-0 list-card roles-side-list" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px; min-width: 0;">
                 <div class="card-header border-0 p-0" style="background: transparent;">
                     <div class="list-header d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center justify-content-between py-3 px-3 px-md-4 border-bottom gap-2" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
                         <div class="list-header-title-row d-flex align-items-center justify-content-between flex-shrink-0" style="min-width: 0;">
@@ -248,7 +248,7 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive" style="  overflow-y: auto; overflow-x: hidden;">
+                    <div class="table-responsive">
                         <table class="table table-hover mb-0 align-middle">
                              <thead class="table-head-hp" style="background: linear-gradient(to right, color-mix(in srgb, var(--primary-color) 12%, #ffffff), color-mix(in srgb, var(--primary-color) 18%, #ffffff)) !important;">
                                 <tr>
@@ -381,6 +381,7 @@
             }
         }
         .list-card-col,.list-card{min-width:0}.list-header{flex-wrap:wrap}.list-header-title-row{min-width:0}.list-header-search{min-width:200px}.filter-sidebar{width:350px;max-width:100%}@media (max-width:767.98px){.filter-sidebar{width:100%!important}}@media (min-width:992px){.list-header-search{min-width:240px;max-width:360px}}
+        .roles-side-list .table-responsive{max-height:none;overflow-y:visible;}
         .table-hover tbody tr:hover{background-color:color-mix(in srgb, var(--primary-color) 12%, #ffffff) !important;transition:all 0.2s ease;}
     </style>
     </div>

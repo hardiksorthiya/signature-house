@@ -23,4 +23,9 @@ class Area extends Model
     {
         return $this->hasMany(Lead::class);
     }
+
+    public function complaintUsers()
+    {
+        return $this->belongsToMany(User::class, 'user_complaint_areas', 'area_id', 'user_id');
+    }
 }

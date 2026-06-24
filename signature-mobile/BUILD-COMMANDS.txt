@@ -1,0 +1,174 @@
+================================================================================
+  SIGNATURE IN HOUSE — MOBILE APP BUILD COMMANDS
+  Project folder: signature-mobile
+  Expo SDK: 54 (works with Expo Go from Play Store / App Store)
+  Laravel URL: https://signature-in-house.com
+  Expo project: https://expo.dev/accounts/sorath8461/projects/signature-in-house
+================================================================================
+
+REQUIREMENTS
+------------
+- Node.js 20.19.4 or newer
+- Run all commands from this folder:
+
+  cd /home/signatureinhouse/htdocs/signature-in-house.com/signature-mobile
+
+- First time on server: use Node 20 (nvm or nodesource)
+
+
+================================================================================
+ONE-TIME SETUP (first time only)
+================================================================================
+
+npm run setup
+
+  → Login to Expo (expo.dev)
+  → Link project to EAS
+  → Add EAS_PROJECT_ID and EXPO_OWNER to .env
+
+Or manually:
+
+  npm run eas:login
+  npm run eas:init
+
+
+================================================================================
+EXPO GO — OPEN APP ON PHONE (no APK, no dev server)
+================================================================================
+
+After code changes, publish update for Expo Go:
+
+  npm run publish:preview
+
+Users open on phone:
+  - https://signature-in-house.com/mobile-app
+  - Or Expo project link → "Open in Expo Go"
+  - Login in Expo Go as: sorath8461
+
+Laravel .env (already set):
+  MOBILE_EXPO_PROJECT_URL=https://expo.dev/accounts/sorath8461/projects/signature-in-house
+
+
+================================================================================
+DEV SERVER (for live reload while coding — optional)
+================================================================================
+
+  npm start
+
+  → Uses TUNNEL mode on remote VPS (works from any network)
+  → Scan tunnel QR in Expo Go
+
+Other start options:
+
+  npm run start:tunnel    # same as npm start (tunnel)
+  npm run start:lan       # only if Metro runs on YOUR laptop, same WiFi as phone
+
+NOTE: LAN QR (exp://82.x.x.x:8081) does NOT work from phone — server is cloud VPS.
+
+
+================================================================================
+ANDROID — STANDALONE APK (install without Expo Go)
+================================================================================
+
+Local build on this server (needs Android SDK at /opt/android-sdk):
+
+  npm run build:android
+
+Output APK:
+  dist/signature-in-house.apk
+
+Install: copy APK to phone → tap to install → allow unknown sources if asked.
+
+
+================================================================================
+ANDROID / iOS — EAS CLOUD BUILD (Expo servers)
+================================================================================
+
+Login (if needed):
+
+  npm run eas:login
+
+Preview build (internal APK + iOS, channel: preview):
+
+  npm run eas:build:preview
+
+Production build (APK + iOS, channel: production):
+
+  npm run eas:build:production
+
+Android only:
+
+  npx eas-cli build --platform android --profile production
+
+iOS only:
+
+  npx eas-cli build --platform ios --profile production
+
+Download build from: https://expo.dev → Projects → signature-in-house → Builds
+
+
+================================================================================
+iOS — TESTFLIGHT (needs Apple Developer $99/year)
+================================================================================
+
+  npm run build:ios:testflight
+
+Requires in .env.eas (optional):
+  EXPO_TOKEN
+  EAS_PROJECT_ID
+  APPLE_ID
+  APPLE_TEAM_ID
+  APPLE_ASC_APP_ID
+  APPLE_APP_SPECIFIC_PASSWORD
+
+Bundle ID: com.signatureinhouse.app
+
+After TestFlight is ready, add to Laravel .env:
+  MOBILE_IOS_TESTFLIGHT_URL=https://testflight.apple.com/join/XXXX
+
+
+================================================================================
+PUBLISH / UPDATE COMMANDS (summary)
+================================================================================
+
+  npm run publish:preview          # Push JS update to Expo Go (preview channel)
+  npm run eas:update:preview       # Same, direct eas-cli command
+
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Metro bundling error (missing packages):
+
+  rm -rf node_modules .expo
+  npm install
+  npm start
+
+Fix dependency versions for current Expo SDK:
+
+  npx expo install --fix
+
+Clear and test Android bundle:
+
+  CI=1 npx expo export --platform android
+
+Expo Go "incompatible version" error:
+  → Project uses SDK 54 (Play Store Expo Go)
+  → Do NOT upgrade to SDK 56 until Expo Go on stores supports it
+
+
+================================================================================
+QUICK REFERENCE
+================================================================================
+
+  Task                          Command
+  ----------------------------- ------------------------------------------
+  First setup                   npm run setup
+  Open in Expo Go (users)       npm run publish:preview + mobile-app page
+  Dev server (tunnel)           npm start
+  Local Android APK             npm run build:android
+  Cloud Android + iOS           npm run eas:build:production
+  iOS TestFlight                npm run build:ios:testflight
+
+================================================================================

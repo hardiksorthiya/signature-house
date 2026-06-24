@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Lead;
+use App\Models\Area;
+use App\Models\ComplainType;
+use App\Models\Complaint;
 use App\Models\Contract;
+use App\Models\Lead;
+use App\Models\MachineCategory;
+use App\Models\Payment;
 use App\Models\ProformaInvoice;
 use App\Models\PurchaseOrder;
-use App\Models\Payment;
 use App\Models\Seller;
 use App\Models\User;
+use App\Support\ComplaintAreaAssignment;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -1178,5 +1185,393 @@ class ReportController extends Controller
         $seller->load(['country', 'bankDetails']);
 
         return view('reports.seller-ledger', compact('seller', 'proformaInvoices'));
+    }
+
+    // ----- Complaints Report -----
+
+    protected function complaintsReportQuery()
+    {
+        $query = Complaint::with(['contract.area', 'contract.city', 'complainType', 'machineCategory', 'creator', 'assignees.roles']);
+        ComplaintAreaAssignment::applyVisibleScope($query);
+
+        return $query;
+    }
+
+    protected function complaintReportFilterOptions(): array
+    {
+        return [
+            'areas' => Area::orderBy('name')->get(['id', 'name']),
+            'machineCategories' => MachineCategory::orderBy('name')->get(['id', 'name']),
+            'complainTypes' => ComplainType::orderBy('sort_order')->orderBy('name')->get(['id', 'name']),
+            'engineers' => ComplaintAreaAssignment::assignableUsers()->map(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $user->roles->pluck('name')->first(),
+            ])->values(),
+        ];
+    }
+
+    protected function resolveComplaintReportView(Request $request): string
+    {
+        $view = $request->get('view', 'list');
+        if (! in_array($view, ['list', 'recurring', 'machine', 'date', 'area', 'master'], true)) {
+            return 'list';
+        }
+
+        return $view;
+    }
+
+    protected function applySearchComplaints($query, string $term): void
+    {
+        $like = '%'.$term.'%';
+        $query->where(function ($q) use ($like) {
+            $q->where('complaints.machine_khata_number', 'like', $like)
+                ->orWhere('complaints.other_detail', 'like', $like)
+                ->orWhere('complaints.remarks', 'like', $like)
+                ->orWhereHas('complainType', fn ($t) => $t->where('name', 'like', $like))
+                ->orWhereHas('machineCategory', fn ($m) => $m->where('name', 'like', $like))
+                ->orWhereHas('contract', function ($c) use ($like) {
+                    $c->where('contract_number', 'like', $like)
+                        ->orWhere('company_name', 'like', $like)
+                        ->orWhere('buyer_name', 'like', $like)
+                        ->orWhereHas('area', fn ($a) => $a->where('name', 'like', $like));
+                });
+        });
+    }
+
+    protected function applyComplaintReportFilters($query, Request $request)
+    {
+        $this->applyDateRange($query, $request, 'complaints');
+
+        if ($request->filled('search')) {
+            $term = trim($request->search);
+            if ($term !== '') {
+                $this->applySearchComplaints($query, $term);
+            }
+        }
+
+        if ($request->filled('created_by')) {
+            $query->where('complaints.created_by', $request->created_by);
+        }
+
+        if ($request->filled('area_id')) {
+            $query->whereHas('contract', fn ($q) => $q->where('area_id', $request->area_id));
+        }
+
+        if ($request->filled('machine_category_id')) {
+            $query->where('complaints.machine_category_id', $request->machine_category_id);
+        }
+
+        if ($request->filled('complain_type_id')) {
+            $query->where('complaints.complain_type_id', $request->complain_type_id);
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'completed') {
+                $query->where('complaints.status', 'completed');
+            } elseif ($request->status === 'active') {
+                $query->where(function ($q) {
+                    $q->whereNull('complaints.status')->orWhere('complaints.status', '!=', 'completed');
+                });
+            }
+        }
+
+        if ($request->filled('engineer_id')) {
+            $query->whereHas('assignees', fn ($q) => $q->where('users.id', $request->engineer_id));
+        }
+
+        return $query;
+    }
+
+    protected function bucketComplaintsByEngineer(Collection $complaints): Collection
+    {
+        $engineerBuckets = [];
+
+        foreach ($complaints as $complaint) {
+            $assignees = $complaint->assignees;
+            if ($assignees->isEmpty()) {
+                $engineerBuckets['unassigned']['label'] = 'Unassigned Engineer';
+                $engineerBuckets['unassigned']['subtitle'] = 'Complaints without assignee';
+                $engineerBuckets['unassigned']['complaints'][] = $complaint;
+                continue;
+            }
+
+            foreach ($assignees as $assignee) {
+                $key = (string) $assignee->id;
+                if (! isset($engineerBuckets[$key])) {
+                    $roleName = $assignee->relationLoaded('roles')
+                        ? $assignee->roles->pluck('name')->first()
+                        : $assignee->roles()->value('name');
+                    $engineerBuckets[$key] = [
+                        'label' => $assignee->name,
+                        'subtitle' => $roleName ?: 'Engineer',
+                        'complaints' => [],
+                    ];
+                }
+                $engineerBuckets[$key]['complaints'][] = $complaint;
+            }
+        }
+
+        return collect($engineerBuckets)
+            ->map(function ($bucket, $key) {
+                $complaintCollection = collect($bucket['complaints']);
+                $completedCount = $complaintCollection
+                    ->filter(fn (Complaint $c) => ($c->status ?? 'on_going') === 'completed')
+                    ->count();
+
+                return [
+                    'key' => (string) $key,
+                    'label' => $bucket['label'],
+                    'subtitle' => $bucket['subtitle'],
+                    'count' => $complaintCollection->count(),
+                    'active_count' => $complaintCollection->count() - $completedCount,
+                    'completed_count' => $completedCount,
+                    'complaints' => $complaintCollection->sortByDesc('created_at')->values(),
+                ];
+            })
+            ->sortByDesc('count')
+            ->values();
+    }
+
+    protected function complaintClientLabel(Complaint $complaint): string
+    {
+        $contract = $complaint->contract;
+        if (! $contract) {
+            return 'Unknown';
+        }
+
+        return $contract->company_name ?: $contract->buyer_name ?: 'Unknown';
+    }
+
+    protected function buildComplaintReportGroups(Collection $complaints, string $view): Collection
+    {
+        if ($view === 'recurring') {
+            return $complaints->groupBy('contract_id')
+                ->filter(fn ($items, $contractId) => $contractId && $items->count() >= 2)
+                ->map(fn ($items, $contractId) => [
+                    'key' => (string) $contractId,
+                    'label' => $this->complaintClientLabel($items->first()),
+                    'subtitle' => $items->first()->contract?->contract_number,
+                    'count' => $items->count(),
+                    'complaints' => $items->sortByDesc('created_at')->values(),
+                ])
+                ->sortByDesc('count')
+                ->values();
+        }
+
+        if ($view === 'machine') {
+            return $complaints->groupBy(fn ($c) => $c->machine_category_id ?: 'none')
+                ->map(fn ($items, $id) => [
+                    'key' => (string) $id,
+                    'label' => $items->first()->machineCategory?->name ?? 'Uncategorized',
+                    'subtitle' => null,
+                    'count' => $items->count(),
+                    'complaints' => $items->sortByDesc('created_at')->values(),
+                ])
+                ->sortByDesc('count')
+                ->values();
+        }
+
+        if ($view === 'date') {
+            return $complaints->groupBy(fn ($c) => $c->created_at->toDateString())
+                ->map(fn ($items, $date) => [
+                    'key' => (string) $date,
+                    'label' => Carbon::parse($date)->format('l, d M Y'),
+                    'subtitle' => null,
+                    'count' => $items->count(),
+                    'complaints' => $items->sortByDesc('created_at')->values(),
+                ])
+                ->sortKeysDesc()
+                ->values();
+        }
+
+        if ($view === 'area') {
+            return $complaints->groupBy(fn ($c) => $c->contract?->area_id ?: 'none')
+                ->map(fn ($items, $id) => [
+                    'key' => (string) $id,
+                    'label' => $items->first()->contract?->area?->name ?? 'No Area',
+                    'subtitle' => $items->first()->contract?->city?->name,
+                    'count' => $items->count(),
+                    'complaints' => $items->sortByDesc('created_at')->values(),
+                ])
+                ->sortByDesc('count')
+                ->values();
+        }
+
+        if ($view === 'master') {
+            return $this->bucketComplaintsByEngineer($complaints);
+        }
+
+        return collect();
+    }
+
+    protected function paginateComplaintGroups(Collection $groups, Request $request, int $perPage = 15): LengthAwarePaginator
+    {
+        $page = max(1, (int) $request->get('page', 1));
+        $items = $groups->forPage($page, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $items,
+            $groups->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+    }
+
+    protected function complaintReportExportParams(Request $request): array
+    {
+        return $request->only([
+            'period', 'date_from', 'date_to', 'created_by', 'sort', 'dir', 'search',
+            'view', 'area_id', 'machine_category_id', 'complain_type_id', 'status', 'engineer_id',
+        ]);
+    }
+
+    public function complaintsReport(Request $request)
+    {
+        $this->authorize('view reports');
+
+        $view = $this->resolveComplaintReportView($request);
+        $query = $this->complaintsReportQuery();
+        $this->applyComplaintReportFilters($query, $request);
+
+        $creators = User::whereIn('id', $this->complaintsReportQuery()->distinct()->pluck('created_by')->filter())
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $filterOptions = $this->complaintReportFilterOptions();
+
+        if ($view === 'list') {
+            $sortCol = $request->get('sort', 'created_at');
+            $sortDir = $request->get('dir', 'desc');
+            if (! in_array($sortCol, ['created_at', 'status'], true)) {
+                $sortCol = 'created_at';
+            }
+            if (! in_array($sortDir, ['asc', 'desc'], true)) {
+                $sortDir = 'desc';
+            }
+            $query->orderBy('complaints.'.$sortCol, $sortDir);
+            $complaints = $query->paginate(20)->withQueryString();
+            $groups = null;
+            $groupsPaginator = null;
+            $totalCount = $complaints->total();
+        } else {
+            $complaints = collect();
+            $allGroups = $this->buildComplaintReportGroups(
+                $query->orderBy('complaints.created_at', 'desc')->get(),
+                $view
+            );
+            $groupsPaginator = $this->paginateComplaintGroups($allGroups, $request);
+            $groups = $groupsPaginator->getCollection();
+            $totalCount = $allGroups->sum('count');
+        }
+
+        return view('reports.complaints', array_merge(
+            compact('complaints', 'creators', 'view', 'groups', 'groupsPaginator', 'totalCount'),
+            $filterOptions
+        ));
+    }
+
+    public function exportComplaints(Request $request)
+    {
+        $this->authorize('export reports');
+
+        $view = $this->resolveComplaintReportView($request);
+        $query = $this->complaintsReportQuery();
+        $this->applyComplaintReportFilters($query, $request);
+
+        if ($view === 'list') {
+            $sortCol = $request->get('sort', 'created_at');
+            $sortDir = $request->get('dir', 'desc');
+            if (! in_array($sortCol, ['created_at', 'status'], true)) {
+                $sortCol = 'created_at';
+            }
+            if (! in_array($sortDir, ['asc', 'desc'], true)) {
+                $sortDir = 'desc';
+            }
+            $complaints = $query->orderBy('complaints.'.$sortCol, $sortDir)->get();
+            $groups = null;
+        } else {
+            $complaints = collect();
+            $groups = $this->buildComplaintReportGroups(
+                $query->orderBy('complaints.created_at', 'desc')->get(),
+                $view
+            );
+        }
+
+        $format = $request->get('format', 'excel');
+        if ($format === 'pdf') {
+            $pdf = DomPDF::loadView('reports.complaints-pdf', compact('complaints', 'groups', 'view'));
+            return $pdf->download('complaints-report-'.now()->format('Y-m-d-His').'.pdf');
+        }
+
+        return $this->exportComplaintsExcel($complaints, $groups, $view);
+    }
+
+    protected function exportComplaintsExcel($complaints, $groups, string $view)
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Complaints Report');
+        $row = 1;
+
+        if ($view === 'list') {
+            $headers = ['Date', 'Client', 'Contract', 'Area', 'Complain Type', 'Machine Category', 'Khata No.', 'Status', 'Created By'];
+            foreach (range(0, count($headers) - 1) as $i) {
+                $sheet->setCellValueByColumnAndRow($i + 1, $row, $headers[$i]);
+            }
+            $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+            $sheet->getStyle('A1:I1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E8E8E8');
+            $row = 2;
+            foreach ($complaints as $c) {
+                $sheet->setCellValue('A'.$row, $c->created_at->format('d M Y'));
+                $sheet->setCellValue('B'.$row, $this->complaintClientLabel($c));
+                $sheet->setCellValue('C'.$row, $c->contract?->contract_number ?? '—');
+                $sheet->setCellValue('D'.$row, $c->contract?->area?->name ?? '—');
+                $sheet->setCellValue('E'.$row, $c->complainType?->name ?? '—');
+                $sheet->setCellValue('F'.$row, $c->machineCategory?->name ?? '—');
+                $sheet->setCellValue('G'.$row, $c->machine_khata_number ?: '—');
+                $sheet->setCellValue('H'.$row, ($c->status ?? 'on_going') === 'completed' ? 'Completed' : 'On Going');
+                $sheet->setCellValue('I'.$row, $c->creator?->name ?? '—');
+                $row++;
+            }
+            foreach (range('A', 'I') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+        } else {
+            $headers = ['Group', 'Subtitle', 'Complaints Count', 'Date', 'Client', 'Complain Type', 'Machine Category', 'Status'];
+            foreach (range(0, count($headers) - 1) as $i) {
+                $sheet->setCellValueByColumnAndRow($i + 1, $row, $headers[$i]);
+            }
+            $sheet->getStyle('A1:H1')->getFont()->setBold(true);
+            $sheet->getStyle('A1:H1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E8E8E8');
+            $row = 2;
+            foreach ($groups ?? [] as $group) {
+                foreach ($group['complaints'] as $c) {
+                    $sheet->setCellValue('A'.$row, $group['label']);
+                    $sheet->setCellValue('B'.$row, $group['subtitle'] ?? '—');
+                    $sheet->setCellValue('C'.$row, $group['count']);
+                    $sheet->setCellValue('D'.$row, $c->created_at->format('d M Y'));
+                    $sheet->setCellValue('E'.$row, $this->complaintClientLabel($c));
+                    $sheet->setCellValue('F'.$row, $c->complainType?->name ?? '—');
+                    $sheet->setCellValue('G'.$row, $c->machineCategory?->name ?? '—');
+                    $sheet->setCellValue('H'.$row, ($c->status ?? 'on_going') === 'completed' ? 'Completed' : 'On Going');
+                    $row++;
+                }
+            }
+            foreach (range('A', 'H') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+        }
+
+        $filename = 'complaints-report-'.now()->format('Y-m-d-His').'.xlsx';
+        $writer = new Xlsx($spreadsheet);
+        $temp = storage_path('app/temp/'.$filename);
+        if (! is_dir(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
+        }
+        $writer->save($temp);
+
+        return response()->download($temp, $filename)->deleteFileAfterSend(true);
     }
 }

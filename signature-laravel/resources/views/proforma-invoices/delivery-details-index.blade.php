@@ -156,6 +156,9 @@
                                     <th class="p-2 small fw-semibold" style="color: var(--primary-color) !important;">Sales Manager</th>
                                     <th class="p-2 small fw-semibold" style="color: var(--primary-color) !important;">Total Amount</th>
                                     <th class="p-2 small fw-semibold" style="color: var(--primary-color) !important;">Delivery Details Count</th>
+                                    @if($canAssignMsUnloading ?? false)
+                                    <th class="p-2 small fw-semibold d-none d-md-table-cell" style="color: var(--primary-color) !important;">MS Unloading Users</th>
+                                    @endif
                                     <th class="p-2 small fw-semibold" style="color: var(--primary-color) !important;">Actions</th>
                                 </tr>
                             </thead>
@@ -191,6 +194,13 @@
                                                 <span class="badge bg-secondary">No Details</span>
                                             @endif
                                         </td>
+                                        @if($canAssignMsUnloading ?? false)
+                                        <td class="px-2 d-none d-md-table-cell">
+                                            <span class="small text-muted assigned-user-label-{{ $pi->id }}">
+                                                {{ $pi->msUnloadingAssignedUsers->pluck('name')->join(', ') ?: '—' }}
+                                            </span>
+                                        </td>
+                                        @endif
                                         <td class="px-2">
                                             <div class="d-flex gap-2 flex-wrap">
                                                 <a href="{{ route('proforma-invoices.delivery-details-view', $pi) }}" class="btn btn-sm btn-outline-info" title="View delivery details">
@@ -201,6 +211,16 @@
                                                     <i class="fas fa-truck"></i>
                                                 </a>
                                                 @endcan
+                                                @if($canAssignMsUnloading ?? false)
+                                                @can('edit delivery detail')
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary"
+                                                        title="Assign MS Unloading users"
+                                                        @click="openAssignModal(@js($pi->id), @js($pi->proforma_invoice_number), @js($pi->msUnloadingAssignedUsers->pluck('id')->values()->all()))">
+                                                    <i class="fas fa-user-check"></i>
+                                                </button>
+                                                @endcan
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -234,11 +254,95 @@
                 </div>
             @endif
         </div>
+
+        @if($canAssignMsUnloading ?? false)
+        @can('edit delivery detail')
+        <div class="modal fade" id="msUnloadingAssignModal" tabindex="-1" aria-labelledby="msUnloadingAssignModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow" style="border-radius: 12px;">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-semibold" id="msUnloadingAssignModalLabel">Assign MS Unloading Users</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeAssignModal()"></button>
+                    </div>
+                    <div class="modal-body pt-2">
+                        <p class="text-muted small mb-3">PI: <span class="fw-medium text-dark" x-text="assignPiNumber"></span></p>
+                        <label class="form-label fw-medium mb-2" style="color: #374151;">Users <small class="text-muted">(Multiple Select)</small></label>
+                        <div class="position-relative" @click.away="assignUserDropdownOpen = false">
+                            <button type="button"
+                                    @click="assignUserDropdownOpen = !assignUserDropdownOpen"
+                                    class="form-control text-start d-flex justify-content-between align-items-center"
+                                    :disabled="assignLoading || assignSaving"
+                                    style="border-radius: 8px; border: 1px solid #e5e7eb; background: white; min-height: 38px;">
+                                <span class="text-truncate me-2" x-text="assignUsersButtonLabel"></span>
+                                <i class="fas fa-chevron-down flex-shrink-0" :class="{ 'rotate-180': assignUserDropdownOpen }" style="transition: transform 0.2s ease;"></i>
+                            </button>
+                            <div x-show="assignUserDropdownOpen"
+                                 x-cloak
+                                 class="position-absolute w-100 bg-white border rounded shadow-lg mt-1"
+                                 style="z-index: 1060; max-height: 280px; overflow-y: auto; border-color: #e5e7eb !important; border-radius: 8px;"
+                                 @click.stop>
+                                <div class="p-2 border-bottom sticky-top bg-white" style="border-color: #e5e7eb !important; top: 0;">
+                                    <input type="text"
+                                           x-model="assignUserSearch"
+                                           @click.stop
+                                           placeholder="Search user name..."
+                                           class="form-control form-control-sm"
+                                           style="border-radius: 8px; border: 1px solid #e5e7eb;">
+                                </div>
+                                <template x-if="assignLoading">
+                                    <div class="p-3 text-center text-muted small">Loading users…</div>
+                                </template>
+                                <template x-if="!assignLoading && filteredAssignableUsers.length === 0">
+                                    <div class="p-3 text-center text-muted small">No users match your search.</div>
+                                </template>
+                                <template x-for="u in filteredAssignableUsers" :key="u.id">
+                                    <div class="d-flex align-items-center py-2 px-3"
+                                         style="cursor: pointer; transition: background 0.2s; border-radius: 4px; margin: 2px;"
+                                         :style="isAssignUserSelected(u.id) ? 'background-color: color-mix(in srgb, var(--primary-color) 12%, #ffffff);' : ''"
+                                         @click="toggleAssignUser(u.id)">
+                                        <input class="form-check-input me-3"
+                                               type="checkbox"
+                                               :checked="isAssignUserSelected(u.id)"
+                                               style="cursor: pointer; margin-top: 0; flex-shrink: 0;"
+                                               @click.stop="toggleAssignUser(u.id)">
+                                        <label class="flex-grow-1 mb-0" style="cursor: pointer; margin: 0; font-size: 0.875rem; color: #374151;" x-text="u.name"></label>
+                                        <i class="fas fa-check text-primary ms-2" x-show="isAssignUserSelected(u.id)" style="font-size: 0.875rem;"></i>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <p x-show="assignError" x-text="assignError" class="text-danger small mt-2 mb-0"></p>
+                        <p x-show="assignSuccess" x-text="assignSuccess" class="text-success small mt-2 mb-0"></p>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" @click="closeAssignModal()">Cancel</button>
+                        <button type="button" class="btn btn-primary" @click="saveAssign()" :disabled="assignSaving || assignLoading">
+                            <span x-show="!assignSaving">Save assignment</span>
+                            <span x-show="assignSaving"><i class="fas fa-spinner fa-spin me-1"></i> Saving…</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endcan
+        @endif
     </div>
 
     <script>
         function deliveryDetailsSearch() {
             return {
+                canAssignMsUnloading: @json($canAssignMsUnloading ?? false),
+                assignPiId: null,
+                assignPiNumber: '',
+                selectedAssignUserIds: [],
+                assignableUsers: [],
+                assignUserSearch: '',
+                assignUserDropdownOpen: false,
+                assignLoading: false,
+                assignSaving: false,
+                assignError: '',
+                assignSuccess: '',
+                assignModal: null,
                 formSalesManagerId: @json((string) request('sales_manager_id', '')),
                 formPiNumber: @json((string) request('pi_number', '')),
                 formCustomerName: @json((string) request('customer_name', '')),
@@ -327,11 +431,124 @@
                     this.unifiedDropdownOpen = false;
                 },
 
+                get filteredAssignableUsers() {
+                    const list = Array.isArray(this.assignableUsers) ? this.assignableUsers : [];
+                    const search = String(this.assignUserSearch || '').trim().toLowerCase();
+                    if (!search) return list;
+                    return list.filter(u => u.name && String(u.name).toLowerCase().includes(search));
+                },
+
+                get assignUsersButtonLabel() {
+                    const n = this.selectedAssignUserIds.length;
+                    if (n === 0) return 'Select users';
+                    if (n === 1) {
+                        const u = this.assignableUsers.find(x => String(x.id) === String(this.selectedAssignUserIds[0]));
+                        return u ? u.name : '1 user selected';
+                    }
+                    return n + ' user(s) selected';
+                },
+
+                isAssignUserSelected(userId) {
+                    return this.selectedAssignUserIds.map(String).includes(String(userId));
+                },
+
+                toggleAssignUser(userId) {
+                    const id = String(userId);
+                    const idx = this.selectedAssignUserIds.map(String).indexOf(id);
+                    if (idx >= 0) {
+                        this.selectedAssignUserIds.splice(idx, 1);
+                    } else {
+                        this.selectedAssignUserIds.push(parseInt(userId, 10));
+                    }
+                },
+
                 init() {
                     if (this.formSalesManagerId && this.proformaInvoices.length === 0) {
                         this.loadProformaInvoices();
                     }
-                }
+                    const el = document.getElementById('msUnloadingAssignModal');
+                    if (el && typeof bootstrap !== 'undefined') {
+                        this.assignModal = new bootstrap.Modal(el);
+                    }
+                },
+
+                openAssignModal(piId, piNumber, currentUserIds) {
+                    this.assignPiId = piId;
+                    this.assignPiNumber = piNumber || '';
+                    this.selectedAssignUserIds = Array.isArray(currentUserIds)
+                        ? currentUserIds.map(id => parseInt(id, 10)).filter(id => !isNaN(id))
+                        : [];
+                    this.assignUserSearch = '';
+                    this.assignUserDropdownOpen = false;
+                    this.assignError = '';
+                    this.assignSuccess = '';
+                    this.assignLoading = true;
+                    if (this.assignModal) {
+                        this.assignModal.show();
+                    }
+                    if (this.assignableUsers.length > 0) {
+                        this.assignLoading = false;
+                        return;
+                    }
+                    fetch('{{ route('ms-unloading.assignable-users') }}', {
+                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    })
+                        .then(r => {
+                            if (!r.ok) throw new Error('Could not load users.');
+                            return r.json();
+                        })
+                        .then(users => {
+                            this.assignableUsers = Array.isArray(users) ? users : [];
+                        })
+                        .catch(() => { this.assignError = 'Failed to load assignable users.'; })
+                        .finally(() => { this.assignLoading = false; });
+                },
+
+                closeAssignModal() {
+                    this.assignError = '';
+                    this.assignSuccess = '';
+                    this.assignUserDropdownOpen = false;
+                    this.assignUserSearch = '';
+                },
+
+                saveAssign() {
+                    if (!this.assignPiId) return;
+                    this.assignSaving = true;
+                    this.assignError = '';
+                    this.assignSuccess = '';
+                    const url = '{{ url('/proforma-invoices') }}/' + this.assignPiId + '/ms-unloading-assign';
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({
+                            user_ids: this.selectedAssignUserIds.map(id => parseInt(id, 10)),
+                        }),
+                    })
+                        .then(async r => {
+                            const data = await r.json().catch(() => ({}));
+                            if (!r.ok) throw new Error(data.message || 'Assignment failed.');
+                            return data;
+                        })
+                        .then(data => {
+                            this.assignSuccess = data.message || 'Saved.';
+                            const label = document.querySelector('.assigned-user-label-' + this.assignPiId);
+                            if (label) {
+                                label.textContent = data.assigned_label || '—';
+                            }
+                            setTimeout(() => {
+                                if (this.assignModal) this.assignModal.hide();
+                                this.assignSuccess = '';
+                                this.assignUserDropdownOpen = false;
+                            }, 800);
+                        })
+                        .catch(err => { this.assignError = err.message || 'Assignment failed.'; })
+                        .finally(() => { this.assignSaving = false; });
+                },
             };
         }
     </script>

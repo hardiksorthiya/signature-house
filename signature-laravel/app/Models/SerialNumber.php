@@ -15,6 +15,12 @@ class SerialNumber extends Model
         'machine_category_id',
         'serial_number',
         'khata_number',
+        'production_date',
+        'name_plate_path',
+    ];
+
+    protected $casts = [
+        'production_date' => 'date',
     ];
 
     public function proformaInvoice()

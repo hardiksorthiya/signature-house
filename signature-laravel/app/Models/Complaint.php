@@ -13,8 +13,20 @@ class Complaint extends Model
         'machine_khata_number',
         'other_detail',
         'status',
+        'assigned_at',
+        'completed_at',
         'remarks',
+        'feedback_status',
+        'feedback_remarks',
+        'feedback_at',
+        'feedback_by',
         'created_by',
+    ];
+
+    protected $casts = [
+        'assigned_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'feedback_at' => 'datetime',
     ];
 
     public function contract()
@@ -40,6 +52,11 @@ class Complaint extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function feedbackBy()
+    {
+        return $this->belongsTo(User::class, 'feedback_by');
     }
 
     public function spares()

@@ -49,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
             // If DB is unavailable or settings table missing, continue with null (e.g. during install)
         }
         View::share('appSettings', $settings);
+        View::share('defaultAppIcon', asset('images/sifavicon.png'));
 
         // Add fallback view location (used to resolve missing/mismatched Blade files
         // for modules like Contract / PI / PO in this workspace).

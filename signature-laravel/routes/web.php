@@ -45,6 +45,7 @@ use App\Http\Controllers\PortOfDestinationController;
 use App\Http\Controllers\ComplainTypeController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\ComplaintAreaAssignmentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StorageController;
 use App\Http\Controllers\DashboardChartController;
@@ -60,6 +61,10 @@ Route::get('/storage/{path}', [StorageController::class, 'serve'])
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+Route::get('/mobile-app', [\App\Http\Controllers\MobileAppController::class, 'index'])->name('mobile-app.index');
+Route::get('/mobile-app/android', [\App\Http\Controllers\MobileAppController::class, 'android'])->name('mobile-app.android');
+Route::get('/mobile-app/manifest.webmanifest', [\App\Http\Controllers\MobileAppController::class, 'manifest'])->name('mobile-app.manifest');
 
 Route::get('/welcome', function () {
     return redirect()->route('login');
@@ -476,8 +481,8 @@ Route::middleware('auth')->group(function () {
     
     Route::middleware(['permission:view proforma invoices'])->group(function () {
         Route::get('/proforma-invoices', [ProformaInvoiceController::class, 'index'])->name('proforma-invoices.index');
-        Route::get('/proforma-invoices-delivery-details', [ProformaInvoiceController::class, 'deliveryDetailsIndex'])->name('proforma-invoices.delivery-details-index');
-        Route::get('/proforma-invoices-delivery-details/get-pis-by-sales-manager', [ProformaInvoiceController::class, 'getProformaInvoicesBySalesManagerForDelivery'])->name('proforma-invoices.delivery-details.get-pis-by-sales-manager');
+        Route::get('/proforma-invoices-delivery-details', [\App\Http\Controllers\DeliveryDetailsController::class, 'index'])->name('proforma-invoices.delivery-details-index');
+        Route::get('/proforma-invoices-delivery-details/get-pis-by-sales-manager', [\App\Http\Controllers\DeliveryDetailsController::class, 'getProformaInvoicesBySalesManager'])->name('proforma-invoices.delivery-details.get-pis-by-sales-manager');
     });
     
     // Allow viewing PI details for users with any related permissions
@@ -497,6 +502,11 @@ Route::middleware('auth')->group(function () {
         Route::put('/proforma-invoices/{proformaInvoice}', [ProformaInvoiceController::class, 'update'])->name('proforma-invoices.update');
         Route::get('/proforma-invoices/{proformaInvoice}/delivery-details', [ProformaInvoiceController::class, 'deliveryDetails'])->name('proforma-invoices.delivery-details');
         Route::post('/proforma-invoices/{proformaInvoice}/delivery-details', [ProformaInvoiceController::class, 'storeDeliveryDetails'])->name('proforma-invoices.store-delivery-details');
+    });
+
+    Route::middleware(['permission:edit delivery detail'])->group(function () {
+        Route::get('/ms-unloading-assignable-users', [\App\Http\Controllers\MsUnloadingAssignmentController::class, 'assignableUsers'])->name('ms-unloading.assignable-users');
+        Route::post('/proforma-invoices/{proformaInvoice}/ms-unloading-assign', [\App\Http\Controllers\MsUnloadingAssignmentController::class, 'assign'])->name('ms-unloading.assign');
     });
     
     Route::middleware(['permission:delete proforma invoices'])->group(function () {
@@ -681,6 +691,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/customers', [\App\Http\Controllers\ReportController::class, 'customersReport'])->name('reports.customers');
         Route::get('/reports/customers/{contract}', [\App\Http\Controllers\ReportController::class, 'customerLedger'])->name('reports.customer-ledger');
         Route::get('/reports/spare-used', [\App\Http\Controllers\ReportController::class, 'spareUsedReport'])->name('reports.spare-used');
+        Route::get('/reports/complaints', [\App\Http\Controllers\ReportController::class, 'complaintsReport'])->name('reports.complaints');
         Route::get('/reports/sellers', [\App\Http\Controllers\ReportController::class, 'sellersReport'])->name('reports.sellers');
         Route::get('/reports/sellers/export', [\App\Http\Controllers\ReportController::class, 'exportSellers'])->name('reports.sellers.export')->middleware('permission:export reports');
         Route::get('/reports/sellers/{seller}', [\App\Http\Controllers\ReportController::class, 'sellerLedger'])->name('reports.seller-ledger');
@@ -692,6 +703,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/po/export', [\App\Http\Controllers\ReportController::class, 'exportPo'])->name('reports.po.export');
         Route::get('/reports/payments/export', [\App\Http\Controllers\ReportController::class, 'exportPayments'])->name('reports.payments.export');
         Route::get('/reports/spare-used/export', [\App\Http\Controllers\ReportController::class, 'exportSpareUsed'])->name('reports.spare-used.export');
+        Route::get('/reports/complaints/export', [\App\Http\Controllers\ReportController::class, 'exportComplaints'])->name('reports.complaints.export');
     });
     
     // Tasks Routes - Available to all authenticated users
@@ -717,7 +729,14 @@ Route::middleware('auth')->group(function () {
 
     // Complain (Complaint) Routes - Permission based
     Route::middleware(['permission:view complain'])->group(function () {
+        Route::get('/complaints/active', [ComplaintController::class, 'active'])->name('complaints.active');
+        Route::get('/complaints/completed', [ComplaintController::class, 'completed'])->name('complaints.completed');
+        Route::get('/complaints/feedback', [ComplaintController::class, 'feedback'])->name('complaints.feedback');
         Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
+        Route::get('/complaints/area-assignment', [ComplaintAreaAssignmentController::class, 'index'])->name('complaints.area-assignment');
+    });
+    Route::middleware(['permission:edit complain'])->group(function () {
+        Route::put('/complaints/area-assignment', [ComplaintAreaAssignmentController::class, 'update'])->name('complaints.area-assignment.update');
     });
     Route::middleware(['permission:create complain'])->group(function () {
         Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
@@ -725,6 +744,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
     });
     Route::middleware(['permission:view complain'])->group(function () {
+        Route::get('/complaints/{complaint}/feedback', [ComplaintController::class, 'feedbackForm'])->name('complaints.feedback-form');
         Route::get('/complaints/{complaint}', [ComplaintController::class, 'show'])->name('complaints.show');
     });
     Route::middleware(['permission:edit complain'])->group(function () {
@@ -734,6 +754,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/complaints/{complaint}/assign', [ComplaintController::class, 'assignUpdate'])->name('complaints.assign-update');
         Route::get('/complaints/{complaint}/status', [ComplaintController::class, 'status'])->name('complaints.status');
         Route::put('/complaints/{complaint}/status', [ComplaintController::class, 'statusUpdate'])->name('complaints.status-update');
+        Route::put('/complaints/{complaint}/feedback', [ComplaintController::class, 'feedbackUpdate'])->name('complaints.feedback-update');
     });
     Route::middleware(['permission:delete complain'])->group(function () {
         Route::delete('/complaints/{complaint}', [ComplaintController::class, 'destroy'])->name('complaints.destroy');

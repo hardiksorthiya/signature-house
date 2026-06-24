@@ -53,6 +53,16 @@ class ProformaInvoice extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function msUnloadingAssignedUsers()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'proforma_invoice_ms_unloading_user',
+            'proforma_invoice_id',
+            'user_id'
+        )->withTimestamps()->orderBy('name');
+    }
+
     public function proformaInvoiceMachines()
     {
         return $this->hasMany(ProformaInvoiceMachine::class);
@@ -106,6 +116,11 @@ class ProformaInvoice extends Model
     public function machineErectionDetails()
     {
         return $this->hasMany(MachineErectionDetail::class)->orderBy('machine_category_id')->orderBy('sort_order')->orderBy('machine_number');
+    }
+
+    public function machineErectionMachineSummaries()
+    {
+        return $this->hasMany(MachineErectionMachineSummary::class)->orderBy('machine_category_id')->orderBy('machine_number');
     }
 
     public function iaFittingDetails()

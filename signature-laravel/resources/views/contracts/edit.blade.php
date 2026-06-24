@@ -32,7 +32,7 @@
                     </div>
 
                     <form action="{{ route('contracts.update', $contract) }}" method="POST" id="contractForm"
-                        x-data="contractForm()" x-init="init()">
+                        x-data="contractForm()" x-init="init()" @submit="prepareContractSubmit($event)">
 
                         @csrf
                         @method('PUT')
@@ -248,7 +248,7 @@
                                         </div>
 
                                         <div id="machines-container">
-                                            <template x-for="(machine, index) in machines" :key="machine.id ?? index">
+                                            <div x-for="(machine, index) in machines" :key="machine.id != null ? machine.id : index">
 
                                                 <div class="card mb-3"
                                                     style="border-radius: 8px; border: 1px solid #e5e7eb;">
@@ -294,7 +294,7 @@
                                                                         :id="`brand_${index}`" class="form-select"
                                                                         style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                                                         <template
-                                                                            x-for="brand in (machine.categoryItems?.brands || [])"
+                                                                            x-for="brand in (machine.categoryItems && machine.categoryItems.brands ? machine.categoryItems.brands : [])"
                                                                             :key="brand.id">
                                                                             <option :value="String(brand.id)"
                                                                                 x-text="brand.name"></option>
@@ -312,7 +312,7 @@
                                                                         :id="`seller_${index}`" class="form-select"
                                                                         style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                                                         <template
-                                                                            x-for="seller in (machine.categoryItems?.sellers || [])"
+                                                                            x-for="seller in (machine.categoryItems && machine.categoryItems.sellers ? machine.categoryItems.sellers : [])"
                                                                             :key="seller.id">
                                                                             <option :value="String(seller.id)"
                                                                                 x-text="seller.seller_name"></option>
@@ -757,7 +757,7 @@
                                                         
                                                     </div>
                                                 </div>
-                                            </template>
+                                            </div>
                                         </div>
 
                                         <div class="d-flex justify-content-end mt-3 pt-3 border-top">
@@ -1265,6 +1265,8 @@
         </div>
     @endif
 
+    @include('contracts.partials.machine-form-sync')
+
     <script>
         function contractForm() {
             const existingMachines = @json($machinesData);
@@ -1389,7 +1391,7 @@
                         // Store existing model_id before loading
                         const existingModelId = this.machines[index].machine_model_id;
 
-                        const categoryId = this.machines[index]?.machine_category_id;
+                        const categoryId = this.machines[index] && this.machines[index].machine_category_id;
                         const query = categoryId ? `?category_id=${encodeURIComponent(String(categoryId))}` : '';
                         const response = await fetch(`{{ url('leads/machine-models') }}/${brandId}${query}`);
                         const models = await response.json();
@@ -2076,6 +2078,10 @@
                     } catch (error) {
                         console.error('Error loading areas:', error);
                     }
+                },
+
+                prepareContractSubmit(event) {
+                    syncContractMachineFields(event.target, this.machines);
                 }
             }
         }

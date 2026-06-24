@@ -122,6 +122,56 @@
             </div>
             @endif
 
+            @if(!empty($complaintExtraFilters))
+            <input type="hidden" name="view" value="{{ request('view', 'list') }}">
+            <div class="mb-3">
+                <label class="form-label report-filter-label">Area</label>
+                <select name="area_id" class="form-select report-input">
+                    <option value="">All Areas</option>
+                    @foreach($areas as $area)
+                        <option value="{{ $area->id }}" {{ (string) request('area_id') === (string) $area->id ? 'selected' : '' }}>{{ $area->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label report-filter-label">Machine Category</label>
+                <select name="machine_category_id" class="form-select report-input">
+                    <option value="">All Machine Categories</option>
+                    @foreach($machineCategories as $category)
+                        <option value="{{ $category->id }}" {{ (string) request('machine_category_id') === (string) $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label report-filter-label">Complain Type</label>
+                <select name="complain_type_id" class="form-select report-input">
+                    <option value="">All Complain Types</option>
+                    @foreach($complainTypes as $type)
+                        <option value="{{ $type->id }}" {{ (string) request('complain_type_id') === (string) $type->id ? 'selected' : '' }}>{{ $type->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label report-filter-label">Status</label>
+                <select name="status" class="form-select report-input">
+                    <option value="">All Statuses</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active / On Going</option>
+                    <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label report-filter-label">Assigned Engineer</label>
+                <select name="engineer_id" class="form-select report-input">
+                    <option value="">All Engineers</option>
+                    @foreach($engineers ?? [] as $engineer)
+                        <option value="{{ $engineer['id'] }}" {{ (string) request('engineer_id') === (string) $engineer['id'] ? 'selected' : '' }}>
+                            {{ $engineer['name'] }}{{ !empty($engineer['role']) ? ' — '.$engineer['role'] : '' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+
             <div class="mb-3">
                 <label class="form-label report-filter-label">Sort by</label>
                 <select name="sort" class="form-select report-input">
@@ -169,6 +219,14 @@
                     <div class="flex-grow-1" style="min-width: 0;">
                         <input type="text" name="search" value="{{ request('search') }}" placeholder="Search anything…" class="form-control form-control-sm report-search-input" style="border-radius: 8px; border: 1px solid #e5e7eb; height: 38px;">
                     </div>
+                    @if(!empty($complaintExtraFilters))
+                        <input type="hidden" name="view" value="{{ request('view', 'list') }}">
+                        @foreach(request()->only(['area_id', 'machine_category_id', 'complain_type_id', 'status', 'engineer_id', 'period', 'date_from', 'date_to', 'created_by', 'sort', 'dir']) as $key => $value)
+                            @if($value !== null && $value !== '')
+                                <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                            @endif
+                        @endforeach
+                    @endif
                     <button type="submit" class="btn btn-primary d-flex align-items-center justify-content-center flex-shrink-0 report-search-submit" title="Search">
                         <i class="fas fa-search"></i>
                     </button>

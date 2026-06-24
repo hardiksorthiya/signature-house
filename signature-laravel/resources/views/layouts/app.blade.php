@@ -9,10 +9,11 @@
             $primaryColor = optional($appSettings)->primary_color ?? 'var(--primary-color)';
             $secondaryColor = optional($appSettings)->secondary_color ?? 'var(--primary-dark)';
             $logoPath = optional($appSettings)->logo ? Storage::url($appSettings->logo) : null;
-            $faviconPath = optional($appSettings)->favicon ? Storage::url($appSettings->favicon) : asset('favicon.ico');
+            $faviconPath = optional($appSettings)->favicon ? Storage::url($appSettings->favicon) : $defaultAppIcon;
         @endphp
 
-        <link rel="icon" href="{{ $faviconPath }}">
+        <link rel="icon" type="image/png" href="{{ $faviconPath }}">
+        @include('layouts.pwa-meta')
 
         <title>{{ config('app.name', 'Signature ERP') }}</title>
 
@@ -118,9 +119,9 @@
         <!-- Bootstrap JS -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
         
-        <!-- Alpine.js -->
-        <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-        <script src="https://unpkg.com/@alpinejs/collapse@3.x.x/dist/cdn.min.js" defer></script>
+        <!-- Alpine.js (collapse plugin must load before Alpine core) -->
+        <script src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.14.3/dist/cdn.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js" defer></script>
     </head>
     <body class="bg-light" x-data="{ sidebarOpen: false }" x-init="if (window.innerWidth >= 992) { sidebarOpen = true }" style="font-family: 'Roboto', sans-serif; overflow-x: hidden !important; max-width: 100vw !important;">
         <div class="d-flex vh-100 overflow-hidden" style="overflow-x: hidden !important; max-width: 100vw !important;">
@@ -167,6 +168,9 @@
 
                 <!-- Page Content -->
                 <main class="flex-grow-1 overflow-auto bg-light p-3 p-lg-4">
+                    @if(request()->routeIs('*.index'))
+                        @include('layouts.partials.index-back-button')
+                    @endif
                     {{ $slot }}
                 </main>
             </div>
@@ -260,6 +264,9 @@
         </script>
         @endcannot
         @endauth
+
+        @stack('modals')
+        @stack('scripts')
         
         <script>
             // Debug: Check Alpine.js and sidebar state

@@ -292,6 +292,12 @@
                     <span>Damage</span>
                 </a>
                 @endcan
+                @can('view spare list')
+                <a href="{{ route('ms-unloading-spare-list.index') }}" class="d-flex align-items-center px-3 py-2 mb-1 small text-decoration-none rounded sidebar-link sidebar-submenu {{ request()->routeIs('ms-unloading-spare-list.*') ? 'sidebar-active' : '' }}">
+                    <i class="fas fa-list-alt me-2 sidebar-icon-small"></i>
+                    <span>Spare List</span>
+                </a>
+                @endcan
                 @can('view serial number')
                 <a href="{{ route('serial-numbers.index') }}" class="d-flex align-items-center px-3 py-2 mb-1 small text-decoration-none rounded sidebar-link sidebar-submenu {{ request()->routeIs('serial-numbers.*') ? 'sidebar-active' : '' }}">
                     <i class="fas fa-hashtag me-2 sidebar-icon-small"></i>
@@ -310,12 +316,7 @@
                     <span>IA Fitting</span>
                 </a>
                 @endcan
-                @can('view spare list')
-                <a href="{{ route('ms-unloading-spare-list.index') }}" class="d-flex align-items-center px-3 py-2 mb-1 small text-decoration-none rounded sidebar-link sidebar-submenu {{ request()->routeIs('ms-unloading-spare-list.*') ? 'sidebar-active' : '' }}">
-                    <i class="fas fa-list-alt me-2 sidebar-icon-small"></i>
-                    <span>Spare List</span>
-                </a>
-                @endcan
+                
             </div>
         </div>
     @endif
@@ -376,12 +377,51 @@
     @endcan
 
     @can('view complain')
-    <a 
-        href="{{ route('complaints.index') }}" 
-        class="d-flex align-items-center px-3 py-2 mb-1 text-decoration-none rounded sidebar-link {{ request()->routeIs('complaints.*') ? 'sidebar-active' : '' }}">
-        <i class="fas fa-exclamation-triangle me-3 sidebar-icon"></i>
-        <span class="fw-medium">Complain</span>
-    </a>
+    @php
+        $complainSidebarActive = request()->routeIs('complaints.*');
+        $canManageComplaintAreas = auth()->user()->hasAnyRole(['Admin', 'Super Admin']);
+        $complainSubmenuOpen = $complainSidebarActive;
+    @endphp
+    <div x-data="{ open: {{ $complainSubmenuOpen ? 'true' : 'false' }} }">
+        <button
+            @click="open = !open"
+            class="w-100 d-flex align-items-center justify-content-between px-3 py-2 mb-1 border-0 bg-transparent rounded sidebar-link {{ $complainSidebarActive ? 'sidebar-active' : '' }}">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle me-3 sidebar-icon"></i>
+                <span class="fw-medium text-start">Complain</span>
+            </div>
+            <i class="fas fa-chevron-down small sidebar-chevron" :class="{ 'rotate-180': open }"></i>
+        </button>
+        <div x-show="open" x-collapse class="ms-4">
+            <a href="{{ route('complaints.active') }}"
+               class="d-flex align-items-center px-3 py-2 mb-1 small text-decoration-none rounded sidebar-link sidebar-submenu {{ request()->routeIs('complaints.active') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-clock me-2 sidebar-icon-small"></i>
+                <span>Active Complain</span>
+            </a>
+            <a href="{{ route('complaints.completed') }}"
+               class="d-flex align-items-center px-3 py-2 mb-1 small text-decoration-none rounded sidebar-link sidebar-submenu {{ request()->routeIs('complaints.completed') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-check-circle me-2 sidebar-icon-small"></i>
+                <span>Completed Complain</span>
+            </a>
+            <a href="{{ route('complaints.feedback') }}"
+               class="d-flex align-items-center px-3 py-2 mb-1 small text-decoration-none rounded sidebar-link sidebar-submenu {{ request()->routeIs('complaints.feedback*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-comment-dots me-2 sidebar-icon-small"></i>
+                <span>Feedback</span>
+            </a>
+            <a href="{{ route('complaints.index') }}"
+               class="d-flex align-items-center px-3 py-2 mb-1 small text-decoration-none rounded sidebar-link sidebar-submenu {{ request()->routeIs('complaints.index') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-list me-2 sidebar-icon-small"></i>
+                <span>All Complaints</span>
+            </a>
+            @if($canManageComplaintAreas)
+            <a href="{{ route('complaints.area-assignment') }}"
+               class="d-flex align-items-center px-3 py-2 mb-1 small text-decoration-none rounded sidebar-link sidebar-submenu {{ request()->routeIs('complaints.area-assignment*') ? 'sidebar-active' : '' }}">
+                <i class="fas fa-map-marker-alt me-2 sidebar-icon-small"></i>
+                <span>Assign Complain Area</span>
+            </a>
+            @endif
+        </div>
+    </div>
     @endcan
 
     @can('view contract approvals')

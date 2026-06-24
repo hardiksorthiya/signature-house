@@ -6,6 +6,7 @@ use App\Models\Contract;
 use App\Models\ProformaInvoice;
 use App\Models\PiSpareList;
 use App\Models\User;
+use App\Support\MsUnloadingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -56,6 +57,8 @@ class MsUnloadingSpareListController extends Controller
         $query = ProformaInvoice::with(['piSpareLists', 'contract.creator', 'creator', 'seller'])
             ->orderBy('created_at', 'desc');
 
+        MsUnloadingAssignment::applyVisibleScope($query);
+
         if ($request->filled('sales_manager_id')) {
             $query->where(function ($q) use ($request) {
                 $q->whereHas('contract', function ($subQ) use ($request) {
@@ -89,6 +92,10 @@ class MsUnloadingSpareListController extends Controller
      */
     public function show(ProformaInvoice $proformaInvoice)
     {
+        if (! MsUnloadingAssignment::userCanAccessPi($proformaInvoice)) {
+            abort(403, 'You are not assigned to this MS Unloading job.');
+        }
+
         $proformaInvoice->load(['piSpareLists', 'contract.creator']);
 
         $fixedWithQuantity = [];
@@ -124,6 +131,8 @@ class MsUnloadingSpareListController extends Controller
      */
     public function store(Request $request, ProformaInvoice $proformaInvoice)
     {
+        MsUnloadingAssignment::ensureCanAccessPi($proformaInvoice);
+
         $request->validate([
             'spares' => 'required|array',
             'spares.*.document_name' => 'nullable|string|max:255',
@@ -171,16 +180,19 @@ class MsUnloadingSpareListController extends Controller
         if (!$salesManagerId) {
             return response()->json([]);
         }
-        $pis = ProformaInvoice::where(function ($q) use ($salesManagerId) {
+        $query = ProformaInvoice::query()->where(function ($q) use ($salesManagerId) {
             $q->where('created_by', $salesManagerId)
                 ->orWhereHas('contract', function ($subQ) use ($salesManagerId) {
                     $subQ->where('created_by', $salesManagerId);
                 });
-        })
-            ->orderBy('proforma_invoice_number')
-            ->get(['id', 'proforma_invoice_number', 'buyer_company_name']);
+        });
 
-        return response()->json($pis);
+        MsUnloadingAssignment::applyVisibleScope($query);
+
+        return response()->json(
+            $query->orderBy('proforma_invoice_number')
+                ->get(['id', 'proforma_invoice_number', 'buyer_company_name'])
+        );
     }
 
     public function getContractsBySalesManager(Request $request)

@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Contract;
 use App\Models\ProformaInvoice;
 use App\Models\SerialNumber;
+use App\Support\MsUnloadingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class SerialNumberController extends Controller
@@ -19,6 +21,8 @@ class SerialNumberController extends Controller
     {
         $query = ProformaInvoice::with(['serialNumbers.machineCategory', 'contract.creator', 'creator', 'seller'])
             ->orderBy('created_at', 'desc');
+
+        MsUnloadingAssignment::applyVisibleScope($query);
 
         if ($request->filled('pi_number')) {
             $query->where('proforma_invoice_number', trim($request->pi_number));
@@ -65,6 +69,8 @@ class SerialNumberController extends Controller
         $piQuery = ProformaInvoice::query()
             ->with(['contract.creator', 'creator'])
             ->orderByDesc('created_at');
+
+        MsUnloadingAssignment::applyVisibleScope($piQuery);
 
         if ($like !== null) {
             $piQuery->where(function ($w) use ($like) {
@@ -137,6 +143,10 @@ class SerialNumberController extends Controller
      */
     public function show(ProformaInvoice $proformaInvoice)
     {
+        if (! MsUnloadingAssignment::userCanAccessPi($proformaInvoice)) {
+            abort(403, 'You are not assigned to this MS Unloading job.');
+        }
+
         $proformaInvoice->load([
             'proformaInvoiceMachines.machineCategory',
             'proformaInvoiceMachines.brand',
@@ -184,11 +194,16 @@ class SerialNumberController extends Controller
      */
     public function store(Request $request, ProformaInvoice $proformaInvoice)
     {
+        MsUnloadingAssignment::ensureCanAccessPi($proformaInvoice);
+
         $validator = Validator::make($request->all(), [
             'serial_numbers' => 'required|array',
             'serial_numbers.*.*.machine_id' => 'required|exists:proforma_invoice_machines,id',
             'serial_numbers.*.*.serial_number' => 'nullable|string|max:255',
             'serial_numbers.*.*.khata_number' => 'nullable|string|max:255',
+            'serial_numbers.*.*.production_date' => 'nullable|date',
+            'serial_numbers.*.*.name_plate' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'serial_numbers.*.*.keep_name_plate_path' => 'nullable|string|max:500',
         ]);
 
         // When Khata number is provided, Serial number is compulsory
@@ -215,11 +230,23 @@ class SerialNumberController extends Controller
         try {
             DB::beginTransaction();
 
-            // Delete existing serial numbers for this PI
+            $existingByMachine = SerialNumber::where('proforma_invoice_id', $proformaInvoice->id)
+                ->orderBy('id')
+                ->get()
+                ->groupBy('proforma_invoice_machine_id')
+                ->map(fn ($rows) => $rows->values());
+
+            $pathsToDelete = SerialNumber::where('proforma_invoice_id', $proformaInvoice->id)
+                ->whereNotNull('name_plate_path')
+                ->pluck('name_plate_path')
+                ->all();
+
             SerialNumber::where('proforma_invoice_id', $proformaInvoice->id)->delete();
 
+            $keptPaths = [];
+
             foreach ($request->serial_numbers as $machineId => $instances) {
-                if (empty($machineId)) {
+                if (empty($machineId) || ! is_array($instances)) {
                     continue;
                 }
 
@@ -227,21 +254,50 @@ class SerialNumberController extends Controller
                     ->where('id', $machineId)
                     ->first();
 
-                if (!$machine) {
+                if (! $machine) {
                     continue;
                 }
 
-                // Create serial number entry for each instance
-                foreach ($instances as $instanceData) {
-                    if (!empty($instanceData['serial_number']) || !empty($instanceData['khata_number'])) {
-                        SerialNumber::create([
-                            'proforma_invoice_id' => $proformaInvoice->id,
-                            'proforma_invoice_machine_id' => $machineId,
-                            'machine_category_id' => $machine->machine_category_id,
-                            'serial_number' => $instanceData['serial_number'] ?? null,
-                            'khata_number' => $instanceData['khata_number'] ?? null,
-                        ]);
+                foreach ($instances as $index => $instanceData) {
+                    $serial = trim((string) ($instanceData['serial_number'] ?? ''));
+                    $khata = trim((string) ($instanceData['khata_number'] ?? ''));
+                    $productionDate = $instanceData['production_date'] ?? null;
+                    $hasProductionDate = $productionDate !== null && $productionDate !== '';
+                    $hasFile = $request->hasFile("serial_numbers.{$machineId}.{$index}.name_plate");
+
+                    if ($serial === '' && $khata === '' && ! $hasProductionDate && ! $hasFile
+                        && empty($instanceData['keep_name_plate_path'])) {
+                        continue;
                     }
+
+                    $namePlatePath = $this->resolveNamePlatePath(
+                        $request,
+                        $proformaInvoice,
+                        (string) $machineId,
+                        (int) $index,
+                        $instanceData,
+                        $existingByMachine->get($machineId)
+                    );
+
+                    if ($namePlatePath) {
+                        $keptPaths[] = $namePlatePath;
+                    }
+
+                    SerialNumber::create([
+                        'proforma_invoice_id' => $proformaInvoice->id,
+                        'proforma_invoice_machine_id' => $machineId,
+                        'machine_category_id' => $machine->machine_category_id,
+                        'serial_number' => $serial !== '' ? $serial : null,
+                        'khata_number' => $khata !== '' ? $khata : null,
+                        'production_date' => $hasProductionDate ? $productionDate : null,
+                        'name_plate_path' => $namePlatePath,
+                    ]);
+                }
+            }
+
+            foreach ($pathsToDelete as $oldPath) {
+                if (! in_array($oldPath, $keptPaths, true) && Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
                 }
             }
 
@@ -262,22 +318,63 @@ class SerialNumberController extends Controller
     }
 
     /**
+     * @param  \Illuminate\Support\Collection<int, \App\Models\SerialNumber>|null  $existingRows
+     */
+    protected function resolveNamePlatePath(
+        Request $request,
+        ProformaInvoice $proformaInvoice,
+        string $machineId,
+        int $index,
+        array $instanceData,
+        $existingRows
+    ): ?string {
+        $fileKey = "serial_numbers.{$machineId}.{$index}.name_plate";
+
+        if ($request->hasFile($fileKey)) {
+            $image = $request->file($fileKey);
+            if ($image->isValid()) {
+                $fileName = time() . '_' . uniqid() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $image->getClientOriginalName());
+
+                return $image->storeAs(
+                    'serial-numbers/name-plates/' . $proformaInvoice->id,
+                    $fileName,
+                    'public'
+                );
+            }
+        }
+
+        $keep = trim((string) ($instanceData['keep_name_plate_path'] ?? ''));
+        if ($keep !== '' && Storage::disk('public')->exists($keep)) {
+            return $keep;
+        }
+
+        if ($existingRows && isset($existingRows[$index])) {
+            return $existingRows[$index]->name_plate_path;
+        }
+
+        return null;
+    }
+
+    /**
      * Get PIs by Sales Manager (AJAX)
      */
     public function getPINumbersBySalesManager(Request $request)
     {
         $salesManagerId = $request->get('sales_manager_id');
         
-        $pis = ProformaInvoice::where(function($q) use ($salesManagerId) {
+        $query = ProformaInvoice::query()->where(function ($q) use ($salesManagerId) {
             $q->where('created_by', $salesManagerId)
-              ->orWhereHas('contract', function($subQ) use ($salesManagerId) {
-                  $subQ->where('created_by', $salesManagerId);
-              });
-        })
-        ->orderBy('proforma_invoice_number')
-        ->get(['id', 'proforma_invoice_number', 'buyer_company_name']);
+                ->orWhereHas('contract', function ($subQ) use ($salesManagerId) {
+                    $subQ->where('created_by', $salesManagerId);
+                });
+        });
 
-        return response()->json($pis);
+        MsUnloadingAssignment::applyVisibleScope($query);
+
+        return response()->json(
+            $query->orderBy('proforma_invoice_number')
+                ->get(['id', 'proforma_invoice_number', 'buyer_company_name'])
+        );
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Contract;
 use App\Models\ProformaInvoice;
 use App\Models\MsUnloadingImage;
+use App\Support\MsUnloadingAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,8 +18,10 @@ class MsUnloadingImageController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ProformaInvoice::with(['msUnloadingImages', 'contract.creator', 'creator', 'seller'])
+        $query = ProformaInvoice::with(['msUnloadingImages', 'contract.creator', 'creator', 'seller', 'msUnloadingAssignedUsers'])
             ->orderBy('created_at', 'desc');
+
+        MsUnloadingAssignment::applyVisibleScope($query);
 
         if ($request->filled('pi_number')) {
             $query->where('proforma_invoice_number', trim($request->pi_number));
@@ -65,6 +68,8 @@ class MsUnloadingImageController extends Controller
         $piQuery = ProformaInvoice::query()
             ->with(['contract.creator', 'creator'])
             ->orderByDesc('created_at');
+
+        MsUnloadingAssignment::applyVisibleScope($piQuery);
 
         if ($like !== null) {
             $piQuery->where(function ($w) use ($like) {
@@ -137,6 +142,10 @@ class MsUnloadingImageController extends Controller
      */
     public function show(ProformaInvoice $proformaInvoice)
     {
+        if (! MsUnloadingAssignment::userCanAccessPi($proformaInvoice)) {
+            abort(403, 'You are not assigned to this MS Unloading job.');
+        }
+
         $proformaInvoice->load('msUnloadingImages');
         
         // Get existing images
@@ -150,6 +159,8 @@ class MsUnloadingImageController extends Controller
      */
     public function store(Request $request, ProformaInvoice $proformaInvoice)
     {
+        MsUnloadingAssignment::ensureCanAccessPi($proformaInvoice);
+
         $request->validate([
             'images' => 'required|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:10240', // Max 10MB per image
@@ -223,16 +234,19 @@ class MsUnloadingImageController extends Controller
     {
         $salesManagerId = $request->get('sales_manager_id');
         
-        $pis = ProformaInvoice::where(function($q) use ($salesManagerId) {
+        $query = ProformaInvoice::query()->where(function ($q) use ($salesManagerId) {
             $q->where('created_by', $salesManagerId)
-              ->orWhereHas('contract', function($subQ) use ($salesManagerId) {
-                  $subQ->where('created_by', $salesManagerId);
-              });
-        })
-        ->orderBy('proforma_invoice_number')
-        ->get(['id', 'proforma_invoice_number', 'buyer_company_name']);
+                ->orWhereHas('contract', function ($subQ) use ($salesManagerId) {
+                    $subQ->where('created_by', $salesManagerId);
+                });
+        });
 
-        return response()->json($pis);
+        MsUnloadingAssignment::applyVisibleScope($query);
+
+        return response()->json(
+            $query->orderBy('proforma_invoice_number')
+                ->get(['id', 'proforma_invoice_number', 'buyer_company_name'])
+        );
     }
 
     /**

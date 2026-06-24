@@ -56,7 +56,7 @@
 
     <div class="row g-4">
         <div class="col-12 list-card-col" style="min-width: 0;">
-            <div class="card shadow-sm border-0 list-card" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px; min-width: 0;">
+            <div class="card shadow-sm border-0 list-card mb-4" style="background: linear-gradient(to bottom, #ffffff 0%, color-mix(in srgb, var(--primary-color) 6%, #ffffff) 100%); border-radius: 12px; min-width: 0;">
                 <div class="card-header border-0 p-0" style="background: transparent;">
                     <div class="list-header d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center justify-content-between py-3 px-3 px-md-4 border-bottom gap-2" style="border-color: color-mix(in srgb, var(--primary-color) 20%, transparent) !important;">
                         <div class="list-header-title-row d-flex align-items-center justify-content-between flex-shrink-0" style="min-width: 0;">
@@ -85,7 +85,7 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    <div class="table-responsive" style="  overflow-y: auto; overflow-x: hidden;">
+                    <div class="table-responsive">
                         <table class="table table-hover mb-0 align-middle">
                              <thead class="table-head-hp" style="background: linear-gradient(to right, color-mix(in srgb, var(--primary-color) 12%, #ffffff), color-mix(in srgb, var(--primary-color) 18%, #ffffff)) !important;">
                                 <tr>
@@ -96,7 +96,7 @@
                                     <th class="p-2 small fw-semibold" style="color: var(--primary-color) !important;">Total Amount</th>
                                     <th class="p-2 small fw-semibold" style="color: var(--primary-color) !important;">Status</th>
                                     <th class="p-2 small fw-semibold" style="color: var(--primary-color) !important;">Signed Date</th>
-                                    <th class="p-2 small fw-semibold" style="color: var(--primary-color) !important;">Actions</th>
+                                    <th class="px-4 py-3 small fw-semibold text-center" style="color: var(--primary-color) !important;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -139,37 +139,38 @@
                                             <small class="text-muted">{{ $contract->updated_at->format('M d, Y H:i') }}</small>
                                         </td>
                                         <td class="px-2">
-                                            <div class="d-flex gap-2">
+                                            <div class="d-flex gap-1 flex-wrap justify-content-center">
                                                 @if($contract->approval_status === 'pending' && $contract->customer_signature)
                                                     @can('approve contracts')
-                                                    <button type="button" 
-                                                            class="btn btn-sm btn-success" 
-                                                            data-bs-toggle="modal" 
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-success"
+                                                            data-bs-toggle="modal"
                                                             data-bs-target="#approveModal{{ $contract->id }}"
-                                                            style="border-radius: 6px;">
-                                                        <i class="fas fa-check me-1"></i>Approve
+                                                            style="border-radius: 6px;"
+                                                            title="Approve">
+                                                        <i class="fas fa-check"></i>
                                                     </button>
                                                     @endcan
                                                     @can('reject contracts')
-                                                    <button type="button" 
-                                                            class="btn btn-sm btn-danger" 
-                                                            data-bs-toggle="modal" 
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-danger"
+                                                            data-bs-toggle="modal"
                                                             data-bs-target="#rejectModal{{ $contract->id }}"
-                                                            style="border-radius: 6px;">
-                                                        <i class="fas fa-times me-1"></i>Reject
+                                                            style="border-radius: 6px;"
+                                                            title="Reject">
+                                                        <i class="fas fa-times"></i>
                                                     </button>
                                                     @endcan
                                                 @endif
-                                                <a href="{{ route('contracts.show', $contract) }}" class="btn btn-sm btn-outline-info" style="border-radius: 6px;" title="View Full Contract Details">
-                                                    <i class="fas fa-eye me-1"></i>View
+                                                <a href="{{ route('contracts.show', $contract) }}" class="btn btn-sm btn-outline-info" style="border-radius: 6px;" title="View">
+                                                    <i class="fas fa-eye"></i>
                                                 </a>
                                                 <a href="{{ route('contracts.download-pdf', $contract) }}" class="btn btn-sm btn-outline-success" style="border-radius: 6px;" title="Download PDF" target="_blank">
-                                                    <i class="fas fa-file-pdf me-1"></i>PDF
+                                                    <i class="fas fa-file-pdf"></i>
                                                 </a>
-                                                {{-- Show Edit button only if user has 'convert contract' permission (not just 'view contract approvals') --}}
                                                 @can('convert contract')
-                                                    <a href="{{ route('contracts.edit', $contract) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 6px;" title="Edit Contract Details">
-                                                        <i class="fas fa-edit me-1"></i>Edit
+                                                    <a href="{{ route('contracts.edit', $contract) }}" class="btn btn-sm btn-outline-secondary" style="border-radius: 6px;" title="Edit">
+                                                        <i class="fas fa-edit"></i>
                                                     </a>
                                                 @endcan
                                             </div>

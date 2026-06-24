@@ -1,0 +1,43 @@
+{
+  "name": "signature-mobile",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "expo": "~54.0.35",
+    "expo-constants": "~18.0.13",
+    "expo-status-bar": "~3.0.9",
+    "expo-updates": "~29.0.18",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-webview": "13.15.0"
+  },
+  "devDependencies": {
+    "@expo/ngrok": "^4.1.3",
+    "@types/react": "~19.1.10",
+    "eas-cli": "^20.2.0",
+    "typescript": "~5.9.2"
+  },
+  "scripts": {
+    "start": "bash start.sh",
+    "start:lan": "bash start.sh --lan",
+    "start:go": "bash start.sh --go",
+    "start:tunnel": "bash start.sh --tunnel",
+    "publish:preview": "bash publish-preview.sh",
+    "setup": "bash setup-expo.sh",
+    "build:android": "bash build-android.sh",
+    "build:ios:testflight": "bash build-ios-testflight.sh",
+    "eas:login": "eas login",
+    "eas:init": "eas init",
+    "eas:update:preview": "eas update --channel preview --environment preview",
+    "eas:build:preview": "eas build --platform all --profile preview",
+    "eas:build:production": "eas build --platform all --profile production",
+    "android": "bash start.sh --android",
+    "ios": "bash start.sh --ios",
+    "web": "bash start.sh --web"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=20.19.4"
+  }
+}
