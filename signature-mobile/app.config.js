@@ -1,18 +1,17 @@
 /** @type {import('expo/config').ExpoConfig} */
-const projectId =
-  process.env.EAS_PROJECT_ID ?? '15935d5e-21ff-47e9-9669-5860d96e792e';
-const updatesUrl = `https://u.expo.dev/${projectId}`;
+const projectId = process.env.EAS_PROJECT_ID ?? 'cea5faea-6f43-49ed-a178-682168cc3b6f';
+const updatesUrl = projectId ? `https://u.expo.dev/${projectId}` : undefined;
 
 export default {
   expo: {
     name: 'Signature In House',
     slug: 'signature-in-house',
-    version: '1.0.0',
+    version: '1.0.1',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'light',
     scheme: 'signatureinhouse',
-    owner: process.env.EXPO_OWNER ?? 'sorath8461',
+    owner: process.env.EXPO_OWNER ?? 'signaturetmservice',
     runtimeVersion: {
       policy: 'appVersion',
     },
@@ -29,9 +28,7 @@ export default {
       : {}),
     extra: {
       laravelUrl: process.env.EXPO_PUBLIC_LARAVEL_URL ?? 'https://signature-in-house.com',
-      eas: {
-        projectId,
-      },
+      eas: { projectId },
     },
     ios: {
       supportsTablet: true,
@@ -50,9 +47,8 @@ export default {
       versionCode: 1,
       permissions: ['INTERNET', 'ACCESS_NETWORK_STATE'],
       adaptiveIcon: {
-        backgroundColor: '#E6F4FE',
+        backgroundColor: '#ffffff',
         foregroundImage: './assets/android-icon-foreground.png',
-        backgroundImage: './assets/android-icon-background.png',
         monochromeImage: './assets/android-icon-monochrome.png',
       },
       predictiveBackGestureEnabled: false,

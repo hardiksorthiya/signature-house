@@ -50,7 +50,7 @@ if [ -f .env ]; then
 fi
 
 EXPO_USE_TUNNEL="${EXPO_USE_TUNNEL:-1}"
-EXPO_PROJECT_URL="${EXPO_PROJECT_URL:-https://expo.dev/accounts/sorath8461/projects/signature-in-house}"
+EXPO_PROJECT_URL="${EXPO_PROJECT_URL:-https://expo.dev/accounts/signaturetmservice/projects/signature-in-house}"
 
 echo ""
 echo "=============================================="
@@ -63,7 +63,7 @@ echo "LAN QR (exp://82.x.x.x:8081) will NOT work from your phone."
 echo ""
 echo "Best option (no npm start needed):"
 echo "  1. Install Expo Go on phone"
-echo "  2. Log in as: sorath8461 (same Expo account)"
+echo "  2. Log in as: signaturetmservice (same Expo account)"
 echo "  3. Open: $EXPO_PROJECT_URL"
 echo "  4. Tap \"Open in Expo Go\""
 echo ""

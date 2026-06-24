@@ -3,7 +3,7 @@
   Project folder: signature-mobile
   Expo SDK: 54 (works with Expo Go from Play Store / App Store)
   Laravel URL: https://signature-in-house.com
-  Expo project: https://expo.dev/accounts/sorath8461/projects/signature-in-house
+  Expo project: https://expo.dev/accounts/signaturetmservice/projects/signature-in-house
 ================================================================================
 
 REQUIREMENTS
@@ -43,10 +43,10 @@ After code changes, publish update for Expo Go:
 Users open on phone:
   - https://signature-in-house.com/mobile-app
   - Or Expo project link → "Open in Expo Go"
-  - Login in Expo Go as: sorath8461
+  - Login in Expo Go as: signaturetmservice
 
 Laravel .env (already set):
-  MOBILE_EXPO_PROJECT_URL=https://expo.dev/accounts/sorath8461/projects/signature-in-house
+  MOBILE_EXPO_PROJECT_URL=https://expo.dev/accounts/signaturetmservice/projects/signature-in-house
 
 
 ================================================================================
@@ -98,13 +98,24 @@ Production build (APK + iOS, channel: production):
 
 Android only:
 
-  npx eas-cli build --platform android --profile production
+  npm run eas:build:android:preview
+  npm run eas:build:android:production
 
-iOS only:
+  # Or directly:
+  EAS_NO_VCS=1 npx eas-cli build --platform android --profile preview
 
-  npx eas-cli build --platform ios --profile production
+iOS only (build + auto-submit to App Store Connect):
 
-Download build from: https://expo.dev → Projects → signature-in-house → Builds
+  npm run eas:build:ios:production
+
+  # Or directly (do NOT use bare "eas" — it is not installed globally):
+  EAS_NO_VCS=1 npx eas-cli build --platform ios --profile production --auto-submit
+
+Submit latest iOS build manually:
+
+  npm run eas:submit:ios
+
+Download build from: https://expo.dev/accounts/signaturetmservice/projects/signature-in-house/builds
 
 
 ================================================================================
@@ -157,6 +168,13 @@ Expo Go "incompatible version" error:
   → Project uses SDK 54 (Play Store Expo Go)
   → Do NOT upgrade to SDK 56 until Expo Go on stores supports it
 
+EAS upload failed (git clone exit 128 / dubious ownership):
+  → Repo is owned by another user; EAS runs as root on this server
+  → Use EAS_NO_VCS=1 (already set in npm run eas:build:* scripts):
+
+  EAS_NO_VCS=1 npx eas-cli build --platform android --profile preview
+  npm run eas:build:android:preview
+
 
 ================================================================================
 QUICK REFERENCE
@@ -169,6 +187,10 @@ QUICK REFERENCE
   Dev server (tunnel)           npm start
   Local Android APK             npm run build:android
   Cloud Android + iOS           npm run eas:build:production
+  Android APK (preview)         npm run eas:build:android:preview
+  iOS production + submit       npm run eas:build:ios:production
   iOS TestFlight                npm run build:ios:testflight
+
+App icon source: ../images/sifavicon.png → copied into assets/ before EAS build
 
 ================================================================================
