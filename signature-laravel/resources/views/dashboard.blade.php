@@ -549,6 +549,49 @@
             color: #0f172a;
         }
 
+        /* Mobile: icon beside title, number full-width below */
+        @media (max-width: 767.98px) {
+            .dashboard-metric-card > .card-body {
+                padding: 1rem !important;
+            }
+            .dashboard-metric-card .card-body > .d-flex {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 0.75rem;
+            }
+            .dashboard-metric-card .card-body > .d-flex > .d-flex.flex-column {
+                flex-direction: row;
+                align-items: center;
+                gap: 0.625rem;
+            }
+            .dashboard-metric-card .dashboard-metric-icon-circle {
+                order: -1;
+                flex-shrink: 0;
+                width: 36px;
+                height: 36px;
+                font-size: 0.875rem;
+            }
+            .dashboard-metric-card .dashboard-metric-title {
+                margin-bottom: 0 !important;
+                flex: 1;
+                min-width: 0;
+                line-height: 1.25;
+            }
+            .dashboard-metric-card .text-end {
+                text-align: left !important;
+                width: 100%;
+            }
+            .dashboard-metric-card .dashboard-metric-number-badge {
+                width: 100%;
+                padding: 0.625rem 0.75rem;
+                text-align: center;
+            }
+            .dashboard-metric-card .dashboard-metric-number {
+                font-size: clamp(1.5rem, 7vw, 2rem);
+                word-break: break-word;
+            }
+        }
+
         .calendar-day-cell {
             /* aspect-ratio: 1 / 1; */
             min-height: 80px;

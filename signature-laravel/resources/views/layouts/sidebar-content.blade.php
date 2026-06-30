@@ -1,5 +1,5 @@
-<!-- Logo Section -->
-<div class="p-3 p-lg-4 border-bottom bg-white sidebar-logo-section">
+<!-- Logo Section (desktop sidebar only; mobile logo is in header) -->
+<div class="p-3 p-lg-4 border-bottom bg-white sidebar-logo-section d-none d-lg-block">
     <div class="d-flex align-items-center justify-content-center">
         @if(!empty($logoPath))
             <img 

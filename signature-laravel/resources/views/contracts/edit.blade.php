@@ -248,7 +248,7 @@
                                         </div>
 
                                         <div id="machines-container">
-                                            <div x-for="(machine, index) in machines" :key="machine.id != null ? machine.id : index">
+                                            <template x-for="(machine, index) in machines" :key="machine.id != null ? machine.id : index">
 
                                                 <div class="card mb-3"
                                                     style="border-radius: 8px; border: 1px solid #e5e7eb;">
@@ -757,7 +757,7 @@
                                                         
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </template>
                                         </div>
 
                                         <div class="d-flex justify-content-end mt-3 pt-3 border-top">
@@ -1462,7 +1462,10 @@
                         const existingHealdWireId = preserveValues ? (this.machines[index].machine_heald_wire_id != null ? String(this.machines[index].machine_heald_wire_id) : '') : '';
 
                         // Set categoryItems AFTER storing values
-                        this.machines[index].categoryItems = items;
+                        this.machines[index] = {
+                            ...this.machines[index],
+                            categoryItems: items,
+                        };
 
                         // Wait for Alpine to update the DOM
                         await this.$nextTick();

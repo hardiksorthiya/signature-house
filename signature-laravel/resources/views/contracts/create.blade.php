@@ -177,7 +177,7 @@
                             </div>
 
                             <div id="machines-container">
-                                <div x-for="(machine, index) in machines" :key="index">
+                                <template x-for="(machine, index) in machines" :key="index">
                                     <div class="card mb-3" style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -453,7 +453,7 @@
                                             
                                         </div>
                                     </div>
-                                </div>
+                                </template>
                             </div>
 
                             <div class="d-flex justify-content-end mt-3 pt-3 border-top">
@@ -1021,15 +1021,15 @@
                     try {
                         const response = await fetch(`{{ url('leads/category-items') }}/${categoryId}`);
                         const items = await response.json();
-                        console.log('Category items loaded:', items); // Debug log
-                        this.machines[index].categoryItems = items;
-                        
-                        // Reset brand, model, and seller when category changes
-                        this.machines[index].brand_id = '';
-                        this.machines[index].machine_model_id = '';
-                        this.machines[index].machine_size_id = '';
-                        this.machines[index].seller_id = '';
-                        this.machines[index].machineModels = [];
+                        this.machines[index] = {
+                            ...this.machines[index],
+                            categoryItems: items,
+                            brand_id: '',
+                            machine_model_id: '',
+                            machine_size_id: '',
+                            seller_id: '',
+                            machineModels: [],
+                        };
                         
                         // Auto-select first brand if available - use $nextTick to ensure dropdown is rendered
                         if (items.brands && items.brands.length > 0) {

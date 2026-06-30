@@ -11,6 +11,16 @@
                     <i class="fas fa-bars fs-5"></i>
                 </button>
 
+                <div class="d-lg-none d-flex align-items-center ms-1">
+                    @if(!empty($logoPath))
+                        <img src="{{ $logoPath }}" alt="{{ config('app.name', 'Signature ERP') }}" class="header-mobile-logo">
+                    @else
+                        <div class="header-mobile-logo-placeholder">
+                            <i class="fas fa-tshirt text-white"></i>
+                        </div>
+                    @endif
+                </div>
+
                 <div class="d-none d-md-block text-start ms-3">
                     <div class="fw-medium text-dark small mb-1">{{ Auth::user()->name }}</div>
                     <div class="user-role-badge">

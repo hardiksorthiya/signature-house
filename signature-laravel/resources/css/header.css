@@ -335,6 +335,27 @@ header .py-2 {
     padding-bottom: 0.5rem;
 }
 
+/* Mobile header logo (beside hamburger) */
+.header-mobile-logo {
+    height: 2rem;
+    width: auto;
+    max-width: 9rem;
+    object-fit: contain;
+}
+
+.header-mobile-logo-placeholder {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 header .pt-1 {
     padding-top: 0.25rem;
 }

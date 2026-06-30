@@ -175,7 +175,7 @@
                             </div>
 
                             <div id="machines-container">
-                                <div x-for="(machine, index) in machines" :key="index">
+                                <template x-for="(machine, index) in machines" :key="index">
                                     <div class="card mb-3" style="border-radius: 8px; border: 1px solid #e5e7eb;">
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -451,7 +451,7 @@
                                             
                                         </div>
                                     </div>
-                                </div>
+                                </template>
                             </div>
 
                             <div class="d-flex justify-content-end mt-3 pt-3 border-top">
@@ -1021,7 +1021,10 @@
                     try {
                         const response = await fetch(`{{ url('leads/category-items') }}/${categoryId}`);
                         const items = await response.json();
-                        this.machines[index].categoryItems = items;
+                        this.machines[index] = {
+                            ...this.machines[index],
+                            categoryItems: items,
+                        };
                         
                         const preserveBrand = skipAutoSelect && this.machines[index].brand_id;
                         if (!preserveBrand) {
